@@ -1,8 +1,9 @@
-use leptos::*;
+use leptos::prelude::*;
 use wasm_bindgen::JsCast;
+use web_sys::wasm_bindgen;
 
 #[component]
-pub fn Menu(items: Vec<View>) -> impl IntoView {
+pub fn Menu(items: Vec<AnyView>) -> impl IntoView {
     view! {
         <ul
             tabindex="0"

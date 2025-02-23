@@ -1,4 +1,4 @@
-use leptos::*;
+use leptos::prelude::*;
 use web_sys::SubmitEvent;
 
 pub mod form_fields;

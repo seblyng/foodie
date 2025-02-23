@@ -1,4 +1,4 @@
-use leptos::*;
+use leptos::{prelude::*, tachys::html::property::IntoProperty};
 
 use crate::components::{form::form_fields::get_span, textarea::Textarea};
 

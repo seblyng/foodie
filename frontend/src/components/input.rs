@@ -1,18 +1,16 @@
-use crate::utils::class_extender::ExtendClass;
-use leptos::*;
+use leptos::{prelude::*, tachys::html::property::IntoProperty};
 
 #[component]
 pub fn Input<T>(
     value: T,
-    #[prop(optional, into)] class: Option<AttributeValue>,
-    #[prop(optional, into)] ty: Option<AttributeValue>,
+    #[prop(optional)] class: &'static str,
+    #[prop(optional, into)] ty: &'static str,
     #[prop(optional)] placeholder: &'static str,
-    #[prop(optional, into)] readonly: Option<AttributeValue>,
+    #[prop(optional, into)] readonly: Option<bool>,
 ) -> impl IntoView
 where
     T: IntoProperty,
 {
-    let class = class.extend_class("floating-label-input peer");
     let id = uuid::Uuid::new_v4();
 
     view! {
@@ -24,6 +22,8 @@ where
                 type=ty
                 class=class
                 readonly=readonly
+                class:floating-label-input
+                class:peer
             />
             <label for=id.to_string() class="floating-label">
                 {placeholder}

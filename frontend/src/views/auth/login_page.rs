@@ -1,6 +1,6 @@
 use common::user::UserLogin;
-use leptos::*;
-use leptos_router::{use_navigate, NavigateOptions};
+use leptos::{prelude::*, task::spawn_local};
+use leptos_router::{hooks::use_navigate, NavigateOptions};
 
 use crate::{
     components::form::{
@@ -14,7 +14,7 @@ use crate::{
 #[component]
 pub fn Login() -> impl IntoView {
     let auth = use_context::<AuthContext>().unwrap().0;
-    let user = create_rw_signal(common::user::UserLogin::default());
+    let user = RwSignal::new(common::user::UserLogin::default());
 
     let on_submit = move |user: UserLogin| {
         let navigate = use_navigate();

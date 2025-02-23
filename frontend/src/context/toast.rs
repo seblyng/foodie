@@ -2,7 +2,9 @@ use crate::components::icons::{
     error_icon::ErrorIcon, success_icon::SuccessIcon, warning_icon::WarningIcon,
 };
 use anyhow::anyhow;
-use leptos::*;
+use leptos::prelude::ElementChild;
+use leptos::prelude::*;
+use leptos::prelude::{provide_context, use_context, Update, WriteSignal};
 use std::time::Duration;
 
 #[derive(Clone)]
@@ -14,8 +16,8 @@ pub enum ToastType {
 
 #[component]
 pub fn Toaster(children: Children) -> impl IntoView {
-    let (toaster, set_toaster) = create_signal(Toaster::new());
-    let (removed, set_removed) = create_signal(vec![]);
+    let (toaster, set_toaster) = signal(Toaster::new());
+    let (removed, set_removed) = signal(vec![]);
     provide_context(set_toaster);
 
     let t = move || {
@@ -56,9 +58,9 @@ pub struct Toast {
 impl Toast {
     pub fn get(&self) -> impl IntoView {
         let (icon, alert_type) = match self.ty {
-            ToastType::Success => (SuccessIcon.into_view(), "alert-success"),
-            ToastType::Warning => (WarningIcon.into_view(), "alert-warning"),
-            ToastType::Error => (ErrorIcon.into_view(), "alert-error"),
+            ToastType::Success => (SuccessIcon.into_any(), "alert-success"),
+            ToastType::Warning => (WarningIcon.into_any(), "alert-warning"),
+            ToastType::Error => (ErrorIcon.into_any(), "alert-error"),
         };
 
         view! {

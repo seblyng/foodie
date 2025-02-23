@@ -1,4 +1,4 @@
-use leptos::*;
+use leptos::{ev, prelude::*};
 use uuid::Uuid;
 
 #[component]
@@ -21,7 +21,7 @@ pub fn Modal(
 
     let _dialog = dialog.clone();
 
-    let _ = watch(
+    let _ = Effect::watch(
         move || open.get(),
         move |modal_open, _, _| {
             if *modal_open {

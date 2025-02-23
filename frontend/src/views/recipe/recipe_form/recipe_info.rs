@@ -1,3 +1,4 @@
+use leptos::{html, prelude::*};
 use std::time::Duration;
 
 use crate::{
@@ -5,8 +6,6 @@ use crate::{
     context::toast::{use_toast, Toast, ToastType, ToasterTrait},
 };
 use common::recipe::CreateRecipe;
-use leptos::*;
-use web_sys::{File, Url};
 
 use crate::components::{
     dropdown::DropDownItem,
@@ -23,10 +22,7 @@ use crate::components::{
 use crate::views::recipe::recipe_image::RecipeImage;
 
 #[component]
-pub fn RecipeInfo(
-    file: RwSignal<Option<File>>,
-    current_file: ReadSignal<Option<String>>,
-) -> impl IntoView {
+pub fn RecipeInfo(current_file: ReadSignal<Option<String>>) -> impl IntoView {
     let items = (0..72)
         .map(|i| DropDownItem {
             key: i,
@@ -42,7 +38,7 @@ pub fn RecipeInfo(
             <div class="card-body">
                 <h2 class="card-title">"General info about your recipe"</h2>
                 <FormGroup>
-                    <FileInput file=file current_file=current_file/>
+                    <FileInput current_file=current_file/>
 
                     <FormFieldInput
                         value=move || recipe().name
@@ -52,7 +48,7 @@ pub fn RecipeInfo(
                     />
 
                     <FormFieldSelect
-                        value=(move || recipe().servings).into_signal()
+                        value=Signal::derive(move || recipe().servings)
                         items=items
                         placeholder="Servings"
                         on_change=move |servings| {
@@ -61,7 +57,7 @@ pub fn RecipeInfo(
                     />
 
                     <FormFieldDuration
-                        value=(move || recipe().baking_time.unwrap_or_default()).into_signal()
+                        value=Signal::derive(move || recipe().baking_time.unwrap_or_default())
                         max_hours=72
                         placeholder="Baking time"
                         on_change=move |baking_time| {
@@ -70,7 +66,7 @@ pub fn RecipeInfo(
                     />
 
                     <FormFieldDuration
-                        value=(move || recipe().prep_time.unwrap_or_default()).into_signal()
+                        value=Signal::derive(move || recipe().prep_time.unwrap_or_default())
                         max_hours=72
                         placeholder="Prep time"
                         on_change=move |prep_time| {
@@ -90,12 +86,9 @@ pub fn RecipeInfo(
 }
 
 #[component]
-fn FileInput(
-    file: RwSignal<Option<File>>,
-    current_file: ReadSignal<Option<String>>,
-) -> impl IntoView {
+fn FileInput(current_file: ReadSignal<Option<String>>) -> impl IntoView {
     let toast = use_toast().unwrap();
-    let file_input = create_node_ref::<html::Input>();
+    let file_input = NodeRef::new::<html::Input>();
 
     let on_change = move |_| {
         let Some(files) = file_input.get().unwrap().files() else {
@@ -111,20 +104,17 @@ fn FileInput(
             return;
         }
 
-        file.set(files.get(0));
+        // file.set(files.get(0));
     };
 
+    // let img = move || {
+    //     let blob = file().unwrap().slice().unwrap();
+    //     Url::create_object_url_with_blob(&blob).unwrap().to_string()
+    // };
+
     let image_view = move || {
-        if file().is_some() {
-            view! {
-                <RecipeImage src=move || {
-                    let blob = file().unwrap().slice().unwrap();
-                    Url::create_object_url_with_blob(&blob).unwrap()
-                }/>
-            }
-            .into_view()
-        } else if current_file().is_some() {
-            view! { <RecipeImage src=current_file().unwrap()/> }.into_view()
+        if current_file().is_some() {
+            view! { <RecipeImage src=current_file().unwrap()/> }.into_any()
         } else {
             view! {
                 <div class="flex flex-col items-center justify-center pt-5 pb-6">
@@ -134,15 +124,15 @@ fn FileInput(
                     </p>
                 </div>
             }
-            .into_view()
+            .into_any()
         }
     };
 
     let style = move || {
-        let mut class = "flex justify-center flex-col border-2 rounded-lg cursor-pointer bg-gray-700 border-gray-600 hover:bg-gray-600".to_string();
-        if file().is_none() && current_file().is_none() {
-            class.push_str(" min-h-96");
-        }
+        let class = "flex justify-center flex-col border-2 rounded-lg cursor-pointer bg-gray-700 border-gray-600 hover:bg-gray-600".to_string();
+        // if file.read().is_none() && current_file().is_none() {
+        //     class.push_str(" min-h-96");
+        // }
         class
     };
 

@@ -1,5 +1,5 @@
-use leptos::*;
-use leptos_router::*;
+use leptos::{prelude::*, task::spawn_local};
+use leptos_router::{components::A, hooks::use_navigate};
 
 use crate::{components::menu::Menu, context::auth::AuthContext, request::post};
 
@@ -13,7 +13,7 @@ fn Profile() -> impl IntoView {
             // navigate to login on protected routes
             let navigate = use_navigate();
             navigate("/", Default::default());
-            auth.set(false);
+            auth.set(Some(false));
         });
     };
 
@@ -38,32 +38,27 @@ fn Profile() -> impl IntoView {
                                 </div>
 
                                 <Menu items=vec![
-                                    view! { <A href="profile">"Profile"</A> }.into_view(),
-                                    view! { <button on:click=logout>"Logout"</button> }.into_view(),
+                                    view! { <A href="profile">"Profile"</A> }.into_any(),
+                                    view! { <button on:click=logout>"Logout"</button> }.into_any(),
                                 ]/>
                             </div>
                         }
-                            .into_view()
+                            .into_any()
                     } else {
-                        view! {
-                            <A class="nav-link" href="/login">
-                                "Log in"
-                            </A>
-                        }
-                            .into_view()
+                        view! { <A href="/login">"Log in"</A> }.into_any()
                     }
                 }
-                None => ().into_view(),
+                None => ().into_any(),
             }
         }}
     }
 }
 
-fn get_links() -> Vec<View> {
+fn get_links() -> Vec<AnyView> {
     vec![
-        view! { <A class="nav-link" href="/"> "Home" </A> }.into_view(),
-        view! { <A class="nav-link" href="recipes"> "Recipes" </A> }.into_view(),
-        view! { <A class="nav-link" href="recipes/create"> "Create recipe" </A> }.into_view(),
+        view! { <A href="/"> "Home" </A> }.into_any(),
+        view! { <A href="recipes"> "Recipes" </A> }.into_any(),
+        view! { <A href="recipes/create"> "Create recipe" </A> }.into_any(),
     ]
 }
 
@@ -92,9 +87,7 @@ pub fn Navbar() -> impl IntoView {
 
                     <Menu items=get_links()/>
                 </div>
-                <A class="btn btn-ghost text-xl" href="/">
-                    "Foodie"
-                </A>
+                <A href="/">"Foodie"</A>
             </div>
             <div class="navbar-center hidden lg:flex">
                 <ul class="menu menu-horizontal px-1">

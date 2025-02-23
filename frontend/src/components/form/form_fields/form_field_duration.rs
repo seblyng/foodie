@@ -1,5 +1,5 @@
 use chrono::{NaiveTime, Timelike};
-use leptos::*;
+use leptos::prelude::*;
 
 use crate::components::{
     dropdown::{DropDown, DropDownItem},
@@ -17,8 +17,8 @@ pub fn FormFieldDuration<T>(
 where
     T: Fn(NaiveTime) + 'static + Copy,
 {
-    let (hours, set_hours) = create_signal(0);
-    let (minutes, set_minutes) = create_signal(0);
+    let (hours, set_hours) = signal(0);
+    let (minutes, set_minutes) = signal(0);
 
     let f = |start: usize, end: usize| {
         (start..=end)
@@ -37,24 +37,24 @@ where
             <p>{placeholder}</p>
             <div class="grid grid-cols-2">
                 <DropDown
-                    value=(move || value().hour() as usize).into_signal()
+                    value=Signal::derive(move || value().hour() as usize)
                     on_change=move |h| {
                         set_hours(h as u32);
                         on_change(chrono::NaiveTime::from_hms_opt(hours(), minutes(), 0).unwrap());
                     }
 
-                    class="col-span-1 w-full"
+                    class="col-span-1 w-full".to_string()
                     placeholder="Hours"
                     items=f(0, max_hours)
                 />
                 <DropDown
-                    value=(move || value().minute() as usize).into_signal()
+                    value=Signal::derive(move || value().minute() as usize)
                     on_change=move |h| {
                         set_minutes(h as u32);
                         on_change(chrono::NaiveTime::from_hms_opt(hours(), minutes(), 0).unwrap());
                     }
 
-                    class="col-span-1 w-full"
+                    class="col-span-1 w-full".to_string()
                     placeholder="Minutes"
                     items=f(0, 59)
                 />

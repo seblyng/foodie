@@ -1,5 +1,5 @@
 use crate::components::{form::form_fields::get_span, input::Input};
-use leptos::*;
+use leptos::{prelude::*, tachys::html::property::IntoProperty};
 use std::fmt::Display;
 
 pub enum FormFieldInputType {

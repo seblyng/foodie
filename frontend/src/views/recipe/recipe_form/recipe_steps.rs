@@ -5,13 +5,13 @@ use crate::components::icons::{
     modify_icon::ModifyIcon,
 };
 use common::recipe::CreateRecipe;
-use leptos::*;
+use leptos::prelude::*;
 
 #[component]
 pub fn RecipeSteps() -> impl IntoView {
     let recipe = use_context::<RwSignal<CreateRecipe>>().unwrap();
 
-    let instruction = create_rw_signal("".to_string());
+    let instruction = RwSignal::new("".to_string());
 
     let var_name = view! {
         <div class="card w-full bg-neutral">
