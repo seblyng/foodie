@@ -7,6 +7,7 @@ pub fn MinusIcon() -> impl IntoView {
             xmlns="http://www.w3.org/2000/svg"
             viewBox="0 0 24 24"
             fill="none"
+            class="w-full h-full text-gray-800 dark:text-white"
             stroke="#a5adbb"
             stroke-width="2"
             stroke-linecap="round"
