@@ -2,8 +2,8 @@ use async_trait::async_trait;
 use axum_login::{AuthnBackend, UserId};
 use common::user::User;
 use oauth2::{
-    basic::BasicClient, reqwest::async_http_client, AuthUrl, AuthorizationCode, ClientId,
-    ClientSecret, CsrfToken, RedirectUrl, Scope, TokenResponse, TokenUrl,
+    basic::BasicClient, AuthUrl, AuthorizationCode, ClientId, ClientSecret, CsrfToken,
+    EndpointNotSet, EndpointSet, RedirectUrl, Scope, TokenResponse, TokenUrl,
 };
 use reqwest::{Client, Url};
 use sea_orm::{sea_query::OnConflict, ActiveValue::NotSet, DatabaseConnection, EntityTrait, Set};
@@ -11,14 +11,17 @@ use serde::Deserialize;
 
 use crate::entities::{self, users};
 
+pub type Oauth2ClientWithEndpoints =
+    BasicClient<EndpointSet, EndpointNotSet, EndpointNotSet, EndpointNotSet, EndpointSet>;
+
 #[derive(Clone)]
 pub struct Backend {
     db: DatabaseConnection,
-    client: BasicClient,
+    client: Oauth2ClientWithEndpoints,
 }
 
 impl Backend {
-    pub fn new(db: DatabaseConnection, client: BasicClient) -> Self {
+    pub fn new(db: DatabaseConnection, client: Oauth2ClientWithEndpoints) -> Self {
         Self { db, client }
     }
 
@@ -68,14 +71,14 @@ impl AuthnBackend for Backend {
         &self,
         credentials: Self::Credentials,
     ) -> Result<Option<Self::User>, Self::Error> {
+        let client = Client::new();
         let token = self
             .client
             .exchange_code(AuthorizationCode::new(credentials.code))
-            .request_async(async_http_client)
+            .request_async(&client)
             .await
             .unwrap();
 
-        let client = Client::new();
         let url = Url::parse("https://www.googleapis.com/oauth2/v1/userinfo").unwrap();
         let response = client
             .get(url)
@@ -128,7 +131,7 @@ impl AuthnBackend for Backend {
     }
 }
 
-pub fn get_oauth_client() -> Result<BasicClient, anyhow::Error> {
+pub fn get_oauth_client() -> Result<Oauth2ClientWithEndpoints, anyhow::Error> {
     let base_url = dotenv::var("BASE_URL")?;
     let client_id = dotenv::var("GOOGLE_CLIENT_ID")?;
     let client_secret = dotenv::var("GOOGLE_CLIENT_SECRET")?;
@@ -138,13 +141,13 @@ pub fn get_oauth_client() -> Result<BasicClient, anyhow::Error> {
     let auth_url = "https://accounts.google.com/o/oauth2/auth".to_string();
     let token_url = "https://accounts.google.com/o/oauth2/token".to_string();
 
-    Ok(BasicClient::new(
-        ClientId::new(client_id),
-        Some(ClientSecret::new(client_secret)),
-        AuthUrl::new(auth_url).unwrap(),
-        Some(TokenUrl::new(token_url).unwrap()),
-    )
-    .set_redirect_uri(RedirectUrl::new(redirect_url)?))
+    let basic_client: Oauth2ClientWithEndpoints = BasicClient::new(ClientId::new(client_id))
+        .set_client_secret(ClientSecret::new(client_secret))
+        .set_auth_uri(AuthUrl::new(auth_url)?)
+        .set_token_uri(TokenUrl::new(token_url)?)
+        .set_redirect_uri(RedirectUrl::new(redirect_url)?);
+
+    Ok(basic_client)
 }
 
 pub type AuthSession = axum_login::AuthSession<Backend>;

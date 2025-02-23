@@ -96,13 +96,13 @@ impl App {
                 Router::new()
                     .route("/recipe", get(get_recipes).post(post_recipe))
                     .route(
-                        "/recipe/:id",
+                        "/recipe/{id}",
                         get(get_recipe).delete(delete_recipe).put(update_recipe),
                     )
                     .route("/recipe/image", get(get_presigned_url_for_upload))
                     .route("/ingredient", post(post_ingredient).get(get_ingredients))
                     .route(
-                        "/ingredient/:id",
+                        "/ingredient/{id}",
                         get(get_ingredient).delete(delete_ingredient),
                     )
                     .route("/me", get(get_me))
