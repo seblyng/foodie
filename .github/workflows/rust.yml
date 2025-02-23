@@ -75,6 +75,7 @@ jobs:
           GOOGLE_CLIENT_SECRET: "foo"
           FRONTEND_URL: "https://example.com"
           BASE_URL: "https://example.com"
+          AWS_URL: "https://example.com"
 
   deploy:
     needs: [backend-test, backend-build, frontend-build]
