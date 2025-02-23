@@ -15,8 +15,9 @@ pub struct FoodieAws {
 // TODO: Do not store auth here of course
 impl FoodieAws {
     pub async fn new() -> Self {
+        let aws_url = dotenv::var("AWS_URL").expect("AWS_URL needed");
         let aws = aws_config::defaults(BehaviorVersion::latest())
-            .endpoint_url("https://foodie.lyngjohansen.com/images/".to_string())
+            .endpoint_url(aws_url)
             .credentials_provider(Credentials::new(
                 "admin",
                 "admin",

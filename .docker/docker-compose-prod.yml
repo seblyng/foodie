@@ -41,6 +41,7 @@ services:
       - GOOGLE_CLIENT_SECRET=$GOOGLE_CLIENT_SECRET
       - BASE_URL=$BASE_URL
       - FRONTEND_URL=$FRONTEND_URL
+      - AWS_URL=https://foodie.lyngjohansen.com/images/
 
   postgres:
     networks:
