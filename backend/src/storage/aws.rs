@@ -16,7 +16,7 @@ pub struct FoodieAws {
 impl FoodieAws {
     pub async fn new() -> Self {
         let aws = aws_config::defaults(BehaviorVersion::latest())
-            .endpoint_url("http://localhost:4566/".to_string())
+            .endpoint_url("https://foodie.lyngjohansen.com/images/".to_string())
             .credentials_provider(Credentials::new(
                 "admin",
                 "admin",
