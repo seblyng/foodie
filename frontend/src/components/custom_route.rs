@@ -1,5 +1,5 @@
-use leptos::*;
-use leptos_router::{use_location, Redirect};
+use leptos::prelude::*;
+use leptos_router::{components::Redirect, hooks::use_location};
 
 use crate::{components::loading::Loading, context::auth::AuthContext};
 
@@ -40,12 +40,12 @@ pub fn PrivateRoute(children: ChildrenFn) -> impl IntoView {
             match auth.get() {
                 Some(auth) => {
                     if auth {
-                        children().into_view()
+                        children().into_any()
                     } else {
-                        view! { <Redirect path="/login"/> }.into_view()
+                        view! { <Redirect path="/login"/> }.into_any()
                     }
                 }
-                None => view! { <Loading/> }.into_view(),
+                None => view! { <Loading/> }.into_any(),
             }
         }}
     }
@@ -62,14 +62,14 @@ pub fn PublicRoute(children: ChildrenFn) -> impl IntoView {
                 Some(auth) => {
                     if auth {
                         if location.pathname.get() == "/login" {
-                            return view! { <Redirect path="/"/> }.into_view();
+                            return view! { <Redirect path="/"/> }.into_any();
                         }
-                        children().into_view()
+                        children().into_any()
                     } else {
-                        children().into_view()
+                        children().into_any()
                     }
                 }
-                None => view! { <Loading/> }.into_view(),
+                None => view! { <Loading/> }.into_any(),
             }
         }}
     }

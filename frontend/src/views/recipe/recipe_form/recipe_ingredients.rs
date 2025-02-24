@@ -8,7 +8,7 @@ use crate::components::icons::close_icon::CloseIcon;
 use crate::components::icons::modify_icon::ModifyIcon;
 use common::recipe::{CreateRecipe, CreateRecipeIngredient};
 use common::strum::IntoEnumIterator;
-use leptos::*;
+use leptos::prelude::*;
 use rust_decimal::Decimal;
 
 use crate::components::{
@@ -19,7 +19,7 @@ use crate::components::{
 pub fn RecipeIngredients() -> impl IntoView {
     let recipe = use_context::<RwSignal<CreateRecipe>>().unwrap();
 
-    let recipe_ingredient = create_rw_signal(CreateRecipeIngredient::default());
+    let recipe_ingredient = RwSignal::new(CreateRecipeIngredient::default());
 
     let units = common::recipe::Unit::iter()
         .map(|u| DropDownItem {
@@ -55,10 +55,10 @@ pub fn RecipeIngredients() -> impl IntoView {
                     />
 
                     <FormFieldSelect
-                        value=(move || {
+                        value=Signal::derive(move || {
                             recipe_ingredient().unit.map(|u| u.to_string()).unwrap_or_default()
                         })
-                            .into_signal()
+
                         span="col-span-6 md:col-span-3"
                         items=units
                         placeholder="Unit"

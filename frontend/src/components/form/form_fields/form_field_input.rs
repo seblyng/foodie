@@ -1,5 +1,5 @@
 use crate::components::{form::form_fields::get_span, input::Input};
-use leptos::*;
+use leptos::{prelude::*, tachys::html::property::IntoProperty};
 use std::fmt::Display;
 
 pub enum FormFieldInputType {
@@ -30,7 +30,7 @@ pub fn FormFieldInput<T, U>(
 ) -> impl IntoView
 where
     T: Fn(String) + 'static,
-    U: IntoProperty + Clone,
+    U: IntoProperty + Clone + Send + Sync,
 {
     let class = get_span(span);
 

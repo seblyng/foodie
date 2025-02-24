@@ -1,32 +1,32 @@
 use crate::views::recipe::recipe_form::try_upload_image;
-use leptos_router::{use_navigate, NavigateOptions};
+use leptos::{prelude::*, task::spawn_local};
+use leptos_router::{hooks::use_navigate, NavigateOptions};
 use std::time::Duration;
+use web_sys::File;
 
 use crate::{
-    components::stepper::{Step, Stepper},
+    // components::stepper::Stepper,
     context::toast::{use_toast, Toast, ToastType, ToasterTrait},
     request::post,
-    views::recipe::recipe_form::{
-        recipe_info::RecipeInfo, recipe_ingredients::RecipeIngredients, recipe_steps::RecipeSteps,
-    },
 };
 
 use common::recipe::{CreateRecipe, Recipe};
-use leptos::*;
-use web_sys::File;
 
 use crate::components::form::Form;
 
 #[component]
 pub fn CreateRecipe() -> impl IntoView {
-    let recipe = create_rw_signal(common::recipe::CreateRecipe::default());
+    let recipe = RwSignal::new_with_storage(common::recipe::CreateRecipe::default());
     let toast = use_toast().unwrap();
 
-    let file = create_rw_signal::<Option<File>>(None);
+    let file = signal_local::<Option<File>>(None);
+
+    let navigate = use_navigate();
 
     let on_submit = move |mut create_recipe: CreateRecipe| {
+        let nav = navigate.clone();
         spawn_local(async move {
-            if let Ok(Some(img)) = try_upload_image(file.get_untracked()).await {
+            if let Ok(Some(img)) = try_upload_image(file.0.get_untracked()).await {
                 create_recipe.img = Some(img);
             }
 
@@ -41,14 +41,13 @@ pub fn CreateRecipe() -> impl IntoView {
                         timeout: Some(Duration::from_secs(5)),
                     });
 
-                    let navigate = use_navigate();
                     if let Ok(recipe) = r.json::<Recipe>().await {
-                        navigate(
+                        nav(
                             &format!("/recipes/{}", recipe.id),
                             NavigateOptions::default(),
                         );
                     } else {
-                        navigate("/", NavigateOptions::default());
+                        nav("/", NavigateOptions::default());
                     };
                 }
                 _ => {
@@ -62,18 +61,18 @@ pub fn CreateRecipe() -> impl IntoView {
         })
     };
 
-    let (current_file, _) = create_signal::<Option<String>>(None);
+    // let (current_file, _) = signal::<Option<String>>(None);
 
     view! {
         <Form values=recipe on_submit=on_submit>
-            <Stepper>
-                <Step
-                    label="Basics"
-                    child=move || view! { <RecipeInfo file=file current_file=current_file/> }
-                />
-                <Step label="Ingredients" child=move || view! { <RecipeIngredients/> }/>
-                <Step label="Steps" child=move || view! { <RecipeSteps/> }/>
-            </Stepper>
+            // <Stepper>
+            // <Step
+            // label="Basics"
+            // child=move || view! { <RecipeInfo current_file=current_file/> }
+            // />
+            // <Step label="Ingredients" child=move || view! { <RecipeIngredients/> }/>
+            // <Step label="Steps" child=move || view! { <RecipeSteps/> }/>
+            // </Stepper>
 
             // TODO: Have the save button on the final page
             <button type="submit" class="btn btn-primary">
