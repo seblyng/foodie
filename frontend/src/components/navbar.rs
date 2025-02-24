@@ -1,24 +1,27 @@
 use leptos::{prelude::*, task::spawn_local};
-use leptos_router::{components::A, hooks::use_navigate};
+use leptos_router::hooks::use_navigate;
 
 use crate::{components::menu::Menu, context::auth::AuthContext, request::post};
 
 #[component]
 fn Profile() -> impl IntoView {
     let auth = use_context::<AuthContext>().unwrap().0;
+
+    let navigate = use_navigate();
     let logout = move |_| {
+        let nav = navigate.clone();
         spawn_local(async move {
             post("/api/logout").send().await.unwrap();
             // Need to navigate before setting the state, because otherwise the wrapper router will
             // navigate to login on protected routes
-            let navigate = use_navigate();
-            navigate("/", Default::default());
+            nav("/", Default::default());
             auth.set(Some(false));
         });
     };
 
     view! {
         {move || {
+            let _logout = logout.clone();
             match auth.get() {
                 Some(auth) => {
                     if auth {
@@ -38,17 +41,29 @@ fn Profile() -> impl IntoView {
                                 </div>
 
                                 <Menu items=vec![
-                                    view! { <A href="profile">"Profile"</A> }.into_any(),
-                                    view! { <button on:click=logout>"Logout"</button> }.into_any(),
+                                    view! { <a href="/profile">"Profile"</a> }.into_any(),
+                                    view! { <button on:click=_logout>"Logout"</button> }.into_any(),
                                 ]/>
                             </div>
                         }
                             .into_any()
                     } else {
-                        view! { <A href="/login">"Log in"</A> }.into_any()
+                        view! {
+                            <a class="nav-link" href="/login">
+                                "Log in"
+                            </a>
+                        }
+                            .into_any()
                     }
                 }
-                None => ().into_any(),
+                None => {
+                    view! {
+                        <a class="nav-link" href="/login">
+                            "Log in"
+                        </a>
+                    }
+                        .into_any()
+                }
             }
         }}
     }
@@ -56,9 +71,9 @@ fn Profile() -> impl IntoView {
 
 fn get_links() -> Vec<AnyView> {
     vec![
-        view! { <A href="/"> "Home" </A> }.into_any(),
-        view! { <A href="recipes"> "Recipes" </A> }.into_any(),
-        view! { <A href="recipes/create"> "Create recipe" </A> }.into_any(),
+        view! { <a class="nav-link" href="/"> "Home" </a> }.into_any(),
+        view! { <a class="nav-link" href="/recipes"> "Recipes" </a> }.into_any(),
+        view! { <a class="nav-link" href="/recipes/create"> "Create recipe" </a> }.into_any(),
     ]
 }
 
@@ -87,7 +102,7 @@ pub fn Navbar() -> impl IntoView {
 
                     <Menu items=get_links()/>
                 </div>
-                <A href="/">"Foodie"</A>
+                <a href="/">"Foodie"</a>
             </div>
             <div class="navbar-center hidden lg:flex">
                 <ul class="menu menu-horizontal px-1">

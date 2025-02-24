@@ -21,7 +21,10 @@ pub fn CreateRecipe() -> impl IntoView {
 
     let file = signal_local::<Option<File>>(None);
 
+    let navigate = use_navigate();
+
     let on_submit = move |mut create_recipe: CreateRecipe| {
+        let nav = navigate.clone();
         spawn_local(async move {
             if let Ok(Some(img)) = try_upload_image(file.0.get_untracked()).await {
                 create_recipe.img = Some(img);
@@ -38,14 +41,13 @@ pub fn CreateRecipe() -> impl IntoView {
                         timeout: Some(Duration::from_secs(5)),
                     });
 
-                    let navigate = use_navigate();
                     if let Ok(recipe) = r.json::<Recipe>().await {
-                        navigate(
+                        nav(
                             &format!("/recipes/{}", recipe.id),
                             NavigateOptions::default(),
                         );
                     } else {
-                        navigate("/", NavigateOptions::default());
+                        nav("/", NavigateOptions::default());
                     };
                 }
                 _ => {

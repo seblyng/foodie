@@ -1,7 +1,4 @@
-use leptos::{
-    prelude::{AsyncDerived, LocalStorage},
-    server::Resource,
-};
+use leptos::prelude::{AsyncDerived, LocalStorage};
 
 use crate::request::get;
 

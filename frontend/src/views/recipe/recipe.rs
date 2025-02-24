@@ -80,7 +80,10 @@ fn VideoOptions(recipe: Recipe) -> impl IntoView {
     let (open, set_open) = signal(false);
     let toast = use_toast().unwrap();
 
+    let navigate = use_navigate();
+
     let on_delete = move |_| {
+        let nav = navigate.clone();
         spawn_local(async move {
             match delete(&format!("/api/recipe/{}", recipe.id)).send().await {
                 Ok(r) if r.ok() => {
@@ -89,8 +92,7 @@ fn VideoOptions(recipe: Recipe) -> impl IntoView {
                         body: "Successfully deleted recipe!".to_string(),
                         timeout: Some(Duration::from_secs(5)),
                     });
-                    let navigate = use_navigate();
-                    navigate("/recipes", NavigateOptions::default());
+                    nav("/recipes", NavigateOptions::default());
                 }
                 _ => {
                     toast.add(Toast {

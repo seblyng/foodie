@@ -89,6 +89,9 @@ fn RecipeCard(recipe: Recipe) -> impl IntoView {
         total_time.map(format_time).unwrap_or_default()
     };
 
+    // TODO(seb): Should use <a> instead of use_navigate
+    let navigate = use_navigate();
+
     // TODO: Need to fix it so all images take the same height, and the text span different
     view! {
         <div class="card card-compact max-w-96 h-96 bg-neutral cursor-pointer">
@@ -99,7 +102,6 @@ fn RecipeCard(recipe: Recipe) -> impl IntoView {
             </figure>
             <div
                 on:click=move |_| {
-                    let navigate = use_navigate();
                     navigate(&format!("/recipes/{}", recipe.id), NavigateOptions::default());
                 }
 
