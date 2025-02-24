@@ -24,9 +24,9 @@ mod views;
 
 pub fn main() {
     console_error_panic_hook::set_once();
-    provide_context(AuthContext::setup());
 
     mount_to_body(|| {
+        provide_context(AuthContext::setup());
         view! {
             <Toaster>
                 <Router>

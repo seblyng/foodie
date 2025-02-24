@@ -28,7 +28,6 @@ pub fn Login() -> impl IntoView {
                 .unwrap();
 
             if res.status() != 401 {
-                auth.refetch();
                 navigate("/", NavigateOptions::default());
             }
         });
