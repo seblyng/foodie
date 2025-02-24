@@ -1,5 +1,6 @@
 use leptos::{html, prelude::*};
 use std::time::Duration;
+use web_sys::{File, Url};
 
 use crate::{
     components::icons::file_upload_icon::FileUploadIcon,
@@ -22,7 +23,13 @@ use crate::components::{
 use crate::views::recipe::recipe_image::RecipeImage;
 
 #[component]
-pub fn RecipeInfo(current_file: ReadSignal<Option<String>>) -> impl IntoView {
+pub fn RecipeInfo(
+    file: (
+        ReadSignal<Option<File>, LocalStorage>,
+        WriteSignal<Option<File>, LocalStorage>,
+    ),
+    current_file: ReadSignal<Option<String>>,
+) -> impl IntoView {
     let items = (0..72)
         .map(|i| DropDownItem {
             key: i,
@@ -38,7 +45,7 @@ pub fn RecipeInfo(current_file: ReadSignal<Option<String>>) -> impl IntoView {
             <div class="card-body">
                 <h2 class="card-title">"General info about your recipe"</h2>
                 <FormGroup>
-                    <FileInput current_file=current_file/>
+                    <FileInput file=file current_file=current_file/>
 
                     <FormFieldInput
                         value=move || recipe().name
@@ -86,9 +93,15 @@ pub fn RecipeInfo(current_file: ReadSignal<Option<String>>) -> impl IntoView {
 }
 
 #[component]
-fn FileInput(current_file: ReadSignal<Option<String>>) -> impl IntoView {
+fn FileInput(
+    file: (
+        ReadSignal<Option<File>, LocalStorage>,
+        WriteSignal<Option<File>, LocalStorage>,
+    ),
+    current_file: ReadSignal<Option<String>>,
+) -> impl IntoView {
     let toast = use_toast().unwrap();
-    let file_input = NodeRef::new::<html::Input>();
+    let file_input = NodeRef::<html::Input>::new();
 
     let on_change = move |_| {
         let Some(files) = file_input.get().unwrap().files() else {
@@ -104,16 +117,18 @@ fn FileInput(current_file: ReadSignal<Option<String>>) -> impl IntoView {
             return;
         }
 
-        // file.set(files.get(0));
+        file.1.set(files.get(0));
     };
 
-    // let img = move || {
-    //     let blob = file().unwrap().slice().unwrap();
-    //     Url::create_object_url_with_blob(&blob).unwrap().to_string()
-    // };
+    let img = move || {
+        let blob = file.0().unwrap().slice().unwrap();
+        Url::create_object_url_with_blob(&blob).unwrap().to_string()
+    };
 
     let image_view = move || {
-        if current_file().is_some() {
+        if file.0().is_some() {
+            view! { <RecipeImage src=img()/> }.into_any()
+        } else if current_file().is_some() {
             view! { <RecipeImage src=current_file().unwrap()/> }.into_any()
         } else {
             view! {
@@ -129,10 +144,10 @@ fn FileInput(current_file: ReadSignal<Option<String>>) -> impl IntoView {
     };
 
     let style = move || {
-        let class = "flex justify-center flex-col border-2 rounded-lg cursor-pointer bg-gray-700 border-gray-600 hover:bg-gray-600".to_string();
-        // if file.read().is_none() && current_file().is_none() {
-        //     class.push_str(" min-h-96");
-        // }
+        let mut class = "flex justify-center flex-col border-2 rounded-lg cursor-pointer bg-gray-700 border-gray-600 hover:bg-gray-600".to_string();
+        if file.0.read().is_none() && current_file().is_none() {
+            class.push_str(" min-h-96");
+        }
         class
     };
 

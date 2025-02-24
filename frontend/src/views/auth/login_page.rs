@@ -14,7 +14,7 @@ use crate::{
 #[component]
 pub fn Login() -> impl IntoView {
     let auth = use_context::<AuthContext>().unwrap().0;
-    let user = RwSignal::new(common::user::UserLogin::default());
+    let user = RwSignal::new_with_storage(common::user::UserLogin::default());
 
     let on_submit = move |user: UserLogin| {
         let navigate = use_navigate();

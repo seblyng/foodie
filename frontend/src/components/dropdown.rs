@@ -13,9 +13,9 @@ pub fn DropDown<T, U, V, F>(
     #[prop(optional)] placeholder: &'static str,
 ) -> impl IntoView
 where
-    T: Clone + 'static,
-    U: Eq + PartialEq + Clone + std::hash::Hash + 'static + Sync + Send,
-    V: std::fmt::Display + Clone + 'static,
+    T: Clone + 'static + Send + Sync,
+    U: Eq + PartialEq + Clone + std::hash::Hash + 'static + Send + Sync,
+    V: std::fmt::Display + Clone + 'static + Send + Sync,
     F: Fn(U) + 'static + Clone,
 {
     let internal_items = items.clone();
@@ -63,7 +63,7 @@ where
 pub struct DropDownItem<T, U, V>
 where
     T: Clone,
-    U: Eq + PartialEq + Clone + std::hash::Hash + Sync + Send,
+    U: Eq + PartialEq + Clone + std::hash::Hash,
     V: std::fmt::Display + Clone,
 {
     pub key: U,

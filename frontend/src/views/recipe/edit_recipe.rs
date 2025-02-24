@@ -1,4 +1,4 @@
-// use crate::views::recipe::recipe_form::try_upload_image;
+use crate::views::recipe::recipe_form::try_upload_image;
 use std::time::Duration;
 
 use common::recipe::{CreateRecipe, Recipe};
@@ -6,6 +6,7 @@ use leptos::prelude::*;
 use leptos::prelude::{RwSignal, With};
 use leptos::task::spawn_local;
 use leptos_router::hooks::use_params_map;
+use web_sys::File;
 
 use crate::{
     components::{form::Form, loading::Loading, not_found::NotFound},
@@ -19,7 +20,7 @@ pub fn EditRecipe() -> impl IntoView {
     let toast = use_toast().unwrap();
     let id = move || params.with(|params| params.get("id").unwrap_or_default());
 
-    // let file = ArcRwSignal::new::<Option<File>>(None);
+    let file = signal_local::<Option<File>>(None);
     let (_, set_current_file) = signal::<Option<String>>(None);
 
     let recipe = LocalResource::new(move || async move {
@@ -33,19 +34,19 @@ pub fn EditRecipe() -> impl IntoView {
 
         set_current_file(r.img.clone());
 
-        Some(RwSignal::new(CreateRecipe::from(r)))
+        Some(RwSignal::new_with_storage(CreateRecipe::from(r)))
     });
 
     let _recipe = move || recipe.get().as_deref().map(|it| it.to_owned());
 
-    let on_submit = move |submit_data: CreateRecipe| {
+    let on_submit = move |mut submit_data: CreateRecipe| {
         let _id = id();
         spawn_local(async move {
             // TODO: Tries to upload the image if there is one. See if I want to only
             // call this when I have an image, and not with `Option<File>`
-            // if let Ok(Some(img)) = try_upload_image(file.get_untracked()).await {
-            //     submit_data.img = Some(img);
-            // }
+            if let Ok(Some(img)) = try_upload_image(file.0.get_untracked()).await {
+                submit_data.img = Some(img);
+            }
 
             let body = serde_json::to_value(submit_data).unwrap();
             let res = put(&format!("/api/recipe/{}", _id))

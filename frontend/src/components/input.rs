@@ -4,12 +4,12 @@ use leptos::{prelude::*, tachys::html::property::IntoProperty};
 pub fn Input<T>(
     value: T,
     #[prop(optional)] class: &'static str,
-    #[prop(optional, into)] ty: &'static str,
+    #[prop(optional, into)] ty: String,
     #[prop(optional)] placeholder: &'static str,
     #[prop(optional, into)] readonly: Option<bool>,
 ) -> impl IntoView
 where
-    T: IntoProperty,
+    T: IntoProperty + Send + Sync,
 {
     let id = uuid::Uuid::new_v4();
 

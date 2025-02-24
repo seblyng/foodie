@@ -470,6 +470,7 @@ dependencies = [
  "chrono",
  "common",
  "console_error_panic_hook",
+ "getrandom 0.3.1",
  "leptos",
  "leptos_router",
  "num",
@@ -596,8 +597,10 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "43a49c392881ce6d5c3b8cb70f98717b7c07aabbdff06687b9030dbfbe2725f8"
 dependencies = [
  "cfg-if",
+ "js-sys",
  "libc",
  "wasi 0.13.3+wasi-0.2.2",
+ "wasm-bindgen",
  "windows-targets 0.52.6",
 ]
 
@@ -2239,6 +2242,16 @@ checksum = "93d59ca99a559661b96bf898d8fce28ed87935fd2bea9f05983c1464dd6c71b1"
 dependencies = [
  "getrandom 0.3.1",
  "serde",
+ "uuid-rng-internal",
+]
+
+[[package]]
+name = "uuid-rng-internal"
+version = "1.14.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a3285fc758e8f976d0ad080bea0b0b4a88cb2d2e1d95bd2f57054f36e32e9cc0"
+dependencies = [
+ "getrandom 0.3.1",
 ]
 
 [[package]]

@@ -1,7 +1,8 @@
-// use crate::views::recipe::recipe_form::try_upload_image;
+use crate::views::recipe::recipe_form::try_upload_image;
 use leptos::{prelude::*, task::spawn_local};
 use leptos_router::{hooks::use_navigate, NavigateOptions};
 use std::time::Duration;
+use web_sys::File;
 
 use crate::{
     // components::stepper::Stepper,
@@ -10,22 +11,21 @@ use crate::{
 };
 
 use common::recipe::{CreateRecipe, Recipe};
-// use web_sys::File;
 
 use crate::components::form::Form;
 
 #[component]
 pub fn CreateRecipe() -> impl IntoView {
-    let recipe = RwSignal::new(common::recipe::CreateRecipe::default());
+    let recipe = RwSignal::new_with_storage(common::recipe::CreateRecipe::default());
     let toast = use_toast().unwrap();
 
-    // let file = create_rw_signal::<Option<File>>(None);
+    let file = signal_local::<Option<File>>(None);
 
-    let on_submit = move |create_recipe: CreateRecipe| {
+    let on_submit = move |mut create_recipe: CreateRecipe| {
         spawn_local(async move {
-            // if let Ok(Some(img)) = try_upload_image(file.get_untracked()).await {
-            //     create_recipe.img = Some(img);
-            // }
+            if let Ok(Some(img)) = try_upload_image(file.0.get_untracked()).await {
+                create_recipe.img = Some(img);
+            }
 
             let body = serde_json::to_value(create_recipe).unwrap();
             let res = post("/api/recipe").body(body.to_string()).send().await;

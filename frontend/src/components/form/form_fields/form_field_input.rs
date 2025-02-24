@@ -30,7 +30,7 @@ pub fn FormFieldInput<T, U>(
 ) -> impl IntoView
 where
     T: Fn(String) + 'static,
-    U: IntoProperty + Clone,
+    U: IntoProperty + Clone + Send + Sync,
 {
     let class = get_span(span);
 
