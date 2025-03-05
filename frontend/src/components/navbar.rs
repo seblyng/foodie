@@ -102,7 +102,9 @@ pub fn Navbar() -> impl IntoView {
 
                     <Menu items=get_links()/>
                 </div>
-                <a href="/">"Foodie"</a>
+                <a class="btn btn-ghost text-xl" href="/">
+                    "Foodie"
+                </a>
             </div>
             <div class="navbar-center hidden lg:flex">
                 <ul class="menu menu-horizontal px-1">

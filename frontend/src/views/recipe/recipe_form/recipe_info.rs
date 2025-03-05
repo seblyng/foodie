@@ -82,7 +82,7 @@ pub fn RecipeInfo(
                     />
 
                     <FormFieldTextarea
-                        value=move || recipe().description
+                        value=Signal::derive(move || recipe().description.unwrap_or_default())
                         on_input=move |desc| recipe.update(|r| r.description = Some(desc))
                         placeholder="Description"
                     />

@@ -31,8 +31,16 @@ pub fn CreateRecipe() -> impl IntoView {
     let on_submit = move |mut create_recipe: CreateRecipe| {
         let nav = navigate.clone();
         spawn_local(async move {
-            if let Ok(Some(img)) = try_upload_image(file.0.get_untracked()).await {
-                create_recipe.img = Some(img);
+            match try_upload_image(file.0.get_untracked()).await {
+                Ok(Some(img)) => create_recipe.img = Some(img),
+                Err(_) => {
+                    toast.add(Toast {
+                        ty: ToastType::Error,
+                        body: "Failed to upload image".to_string(),
+                        timeout: Some(Duration::from_secs(5)),
+                    });
+                }
+                _ => (),
             }
 
             let body = serde_json::to_value(create_recipe).unwrap();

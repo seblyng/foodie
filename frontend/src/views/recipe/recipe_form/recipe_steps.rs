@@ -19,7 +19,7 @@ pub fn RecipeSteps() -> impl IntoView {
                 <h2 class="card-title">"Add steps to your recipe"</h2>
                 <FormGroup>
                     <FormFieldTextarea
-                        value=instruction
+                        value=Signal::derive(instruction)
                         on_input=move |i| instruction.set(i)
                         placeholder="Instruction"
                     />

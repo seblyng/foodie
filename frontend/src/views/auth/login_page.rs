@@ -7,13 +7,11 @@ use crate::{
         form_fields::form_field_input::{FormFieldInput, FormFieldInputType},
         Form, FormGroup,
     },
-    context::auth::AuthContext,
     views::auth::google_oauth::Google,
 };
 
 #[component]
 pub fn Login() -> impl IntoView {
-    // let auth = use_context::<AuthContext>().unwrap().0;
     let user = RwSignal::new_with_storage(common::user::UserLogin::default());
     let navigate = use_navigate();
 

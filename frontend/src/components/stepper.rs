@@ -36,7 +36,7 @@ pub fn Stepper(children: Steps) -> impl IntoView {
 
         </ul>
 
-        {_step()}
+        {move || _step()}
 
         <div class="btm-nav bg-neutral">
             <button

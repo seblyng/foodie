@@ -17,7 +17,7 @@ use crate::components::{
 
 #[component]
 pub fn RecipeIngredients() -> impl IntoView {
-    let recipe = use_context::<RwSignal<CreateRecipe>>().unwrap();
+    let recipe = use_context::<RwSignal<CreateRecipe, LocalStorage>>().unwrap();
 
     let recipe_ingredient = RwSignal::new(CreateRecipeIngredient::default());
 
@@ -113,7 +113,7 @@ pub fn RecipeIngredients() -> impl IntoView {
 fn Ingredients(
     index: usize,
     ingredient: CreateRecipeIngredient,
-    recipe: RwSignal<CreateRecipe>,
+    recipe: RwSignal<CreateRecipe, LocalStorage>,
 ) -> impl IntoView {
     let num_steps = move || recipe().ingredients.len();
     let remove_card = move |index: usize| {

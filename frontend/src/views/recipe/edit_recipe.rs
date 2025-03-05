@@ -48,8 +48,16 @@ pub fn EditRecipe() -> impl IntoView {
         spawn_local(async move {
             // TODO: Tries to upload the image if there is one. See if I want to only
             // call this when I have an image, and not with `Option<File>`
-            if let Ok(Some(img)) = try_upload_image(file.0.get_untracked()).await {
-                submit_data.img = Some(img);
+            match try_upload_image(file.0.get_untracked()).await {
+                Ok(Some(img)) => submit_data.img = Some(img),
+                Err(_) => {
+                    toast.add(Toast {
+                        ty: ToastType::Error,
+                        body: "Failed to upload image".to_string(),
+                        timeout: Some(Duration::from_secs(5)),
+                    });
+                }
+                _ => (),
             }
 
             let body = serde_json::to_value(submit_data).unwrap();

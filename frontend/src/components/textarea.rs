@@ -1,37 +1,24 @@
-use leptos::{
-    prelude::*,
-    tachys::html::property::{IntoProperty, Property},
-};
+use leptos::prelude::*;
 
 #[component]
-pub fn Textarea<T>(
-    value: T,
+pub fn Textarea(
+    value: Signal<String>,
     #[prop(optional)] class: &'static str,
     #[prop(optional)] placeholder: &'static str,
-) -> impl IntoView
-where
-    T: IntoProperty + 'static + Copy,
-{
+) -> impl IntoView {
     let id = uuid::Uuid::new_v4();
-
-    // let inner_value = move || {
-    //     let v = match value.into_property() {
-    //         Property::Value(v) => v,
-    //         Property::Fn(f) => f(),
-    //     };
-    //     v.as_string().unwrap_or_default()
-    // };
 
     view! {
         <div class="relative">
             <textarea
+                prop:value=move || value.get()
                 id=id.to_string()
                 placeholder=placeholder
                 class=class
                 class:floating-label-textarea
                 class:peer
             >
-                {"foo"}
+                {value.get_untracked()}
             </textarea>
             <label for=id.to_string() class="floating-label">
                 {placeholder}

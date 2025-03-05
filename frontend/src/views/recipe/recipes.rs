@@ -8,7 +8,7 @@ use chrono::{NaiveTime, Timelike};
 use common::recipe::Recipe;
 use leptos::prelude::*;
 use leptos::prelude::{Get, Transition};
-use leptos_router::{components::A, hooks::use_navigate, NavigateOptions};
+use leptos_router::{hooks::use_navigate, NavigateOptions};
 
 use crate::{
     components::loading::Loading,
@@ -28,7 +28,7 @@ pub fn Recipes() -> impl IntoView {
                     body: "Couldn't fetch recipes".to_string(),
                     timeout: Some(Duration::from_secs(5)),
                 });
-                return None;
+                None
             }
         }
     });
@@ -96,9 +96,9 @@ fn RecipeCard(recipe: Recipe) -> impl IntoView {
     view! {
         <div class="card card-compact max-w-96 h-96 bg-neutral cursor-pointer">
             <figure class="h-full object-cover">
-                <A href=format!("/recipes/{}", recipe.id)>
+                <a href=format!("/recipes/{}", recipe.id)>
                     <img class="h-full w-full object-cover" src=recipe.img alt="Recipe img"/>
-                </A>
+                </a>
             </figure>
             <div
                 on:click=move |_| {
@@ -108,7 +108,7 @@ fn RecipeCard(recipe: Recipe) -> impl IntoView {
                 class="card-body flex flex-row"
             >
                 <div class="flex flex-col">
-                    <A href=format!("/recipes/{}", recipe.id)>{recipe.name}</A>
+                    <a href=format!("/recipes/{}", recipe.id)>{recipe.name}</a>
                     <div class="flex flex-row h-5">
                         <ClockIcon/>
                         <p class="ml-1 mr-3 grow-0">{time}</p>

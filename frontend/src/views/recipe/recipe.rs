@@ -1,6 +1,5 @@
 use leptos::prelude::*;
 use leptos::task::spawn_local;
-use leptos_router::components::A;
 use leptos_router::hooks::{use_navigate, use_params_map};
 use num::rational::Ratio;
 use std::ops::{Add, Sub};
@@ -115,7 +114,7 @@ fn VideoOptions(recipe: Recipe) -> impl IntoView {
                 class="menu menu-sm dropdown-content mt-3 z-[1] p-2 shadow bg-base-100 rounded-box w-52"
             >
                 <li>
-                    <A href=format!("/recipes/{}/edit", recipe.id)>"Edit recipe"</A>
+                    <a href=format!("/recipes/{}/edit", recipe.id)>"Edit recipe"</a>
                 </li>
                 <li>
                     <button on:click=move |_| set_open(true)>"Delete"</button>

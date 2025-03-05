@@ -1,17 +1,16 @@
-use leptos::{prelude::*, tachys::html::property::IntoProperty};
+use leptos::prelude::*;
 
 use crate::components::{form::form_fields::get_span, textarea::Textarea};
 
 #[component]
-pub fn FormFieldTextarea<T, U>(
-    value: U,
+pub fn FormFieldTextarea<T>(
+    value: Signal<String>,
     placeholder: &'static str,
     on_input: T,
     #[prop(optional)] span: &'static str,
 ) -> impl IntoView
 where
     T: Fn(String) + 'static,
-    U: IntoProperty + 'static + Copy,
 {
     let class = get_span(span);
     view! {
