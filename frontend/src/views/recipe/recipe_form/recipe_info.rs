@@ -38,7 +38,7 @@ pub fn RecipeInfo(
         })
         .collect::<Vec<_>>();
 
-    let recipe = use_context::<RwSignal<CreateRecipe>>().unwrap();
+    let recipe = use_context::<RwSignal<CreateRecipe, LocalStorage>>().unwrap();
 
     view! {
         <div class="card w-full bg-neutral">

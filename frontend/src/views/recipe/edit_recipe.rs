@@ -1,3 +1,7 @@
+use crate::components::stepper::{Step, Stepper};
+use crate::views::recipe::recipe_form::recipe_info::RecipeInfo;
+use crate::views::recipe::recipe_form::recipe_ingredients::RecipeIngredients;
+use crate::views::recipe::recipe_form::recipe_steps::RecipeSteps;
 use crate::views::recipe::recipe_form::try_upload_image;
 use std::time::Duration;
 
@@ -21,7 +25,7 @@ pub fn EditRecipe() -> impl IntoView {
     let id = move || params.with(|params| params.get("id").unwrap_or_default());
 
     let file = signal_local::<Option<File>>(None);
-    let (_, set_current_file) = signal::<Option<String>>(None);
+    let (current_file, set_current_file) = signal::<Option<String>>(None);
 
     let recipe = LocalResource::new(move || async move {
         let r = get(&format!("/api/recipe/{}", id()))
@@ -82,22 +86,22 @@ pub fn EditRecipe() -> impl IntoView {
                         Some(r) => {
                             view! {
                                 <Form values=r on_submit=on_submit>
-                                    // <Stepper>
-                                    // <Step
-                                    // label="Basics"
-                                    // child=move || {
-                                    // view! { <RecipeInfo current_file=current_file/> }
-                                    // }
-                                    // />
-                                    // 
-                                    // <Step
-                                    // label="Ingredients"
-                                    // child=move || view! { <RecipeIngredients/> }
-                                    // />
-                                    // <Step label="Steps" child=move || view! { <RecipeSteps/> }/>
-                                    // </Stepper>
+                                    <Stepper>
+                                        <Step
+                                            label="Basics"
+                                            child=move || {
+                                                view! { <RecipeInfo file=file current_file=current_file/> }
+                                            }
+                                        />
+
+                                        <Step
+                                            label="Ingredients"
+                                            child=move || view! { <RecipeIngredients/> }
+                                        />
+                                        <Step label="Steps" child=move || view! { <RecipeSteps/> }/>
 
                                     // TODO: Have the save button on the final page
+                                    </Stepper>
                                     <button type="submit" class="btn btn-primary">
                                         {"Save"}
                                     </button>

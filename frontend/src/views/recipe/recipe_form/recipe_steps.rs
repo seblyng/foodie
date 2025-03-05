@@ -9,7 +9,7 @@ use leptos::prelude::*;
 
 #[component]
 pub fn RecipeSteps() -> impl IntoView {
-    let recipe = use_context::<RwSignal<CreateRecipe>>().unwrap();
+    let recipe = use_context::<RwSignal<CreateRecipe, LocalStorage>>().unwrap();
 
     let instruction = RwSignal::new("".to_string());
 
@@ -66,7 +66,11 @@ pub fn RecipeSteps() -> impl IntoView {
 }
 
 #[component]
-fn RecipeStepCard(index: usize, step: String, recipe: RwSignal<CreateRecipe>) -> impl IntoView {
+fn RecipeStepCard(
+    index: usize,
+    step: String,
+    recipe: RwSignal<CreateRecipe, LocalStorage>,
+) -> impl IntoView {
     let num_steps = move || recipe().instructions.unwrap_or_default().len();
     let remove_card = move |index: usize| {
         recipe.update(|r| {

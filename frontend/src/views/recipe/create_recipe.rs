@@ -1,11 +1,16 @@
-use crate::views::recipe::recipe_form::try_upload_image;
+use crate::{
+    components::stepper::{Step, Stepper},
+    views::recipe::recipe_form::{
+        recipe_info::RecipeInfo, recipe_ingredients::RecipeIngredients, recipe_steps::RecipeSteps,
+        try_upload_image,
+    },
+};
 use leptos::{prelude::*, task::spawn_local};
 use leptos_router::{hooks::use_navigate, NavigateOptions};
 use std::time::Duration;
 use web_sys::File;
 
 use crate::{
-    // components::stepper::Stepper,
     context::toast::{use_toast, Toast, ToastType, ToasterTrait},
     request::post,
 };
@@ -61,18 +66,18 @@ pub fn CreateRecipe() -> impl IntoView {
         })
     };
 
-    // let (current_file, _) = signal::<Option<String>>(None);
+    let (current_file, _) = signal::<Option<String>>(None);
 
     view! {
         <Form values=recipe on_submit=on_submit>
-            // <Stepper>
-            // <Step
-            // label="Basics"
-            // child=move || view! { <RecipeInfo current_file=current_file/> }
-            // />
-            // <Step label="Ingredients" child=move || view! { <RecipeIngredients/> }/>
-            // <Step label="Steps" child=move || view! { <RecipeSteps/> }/>
-            // </Stepper>
+            <Stepper>
+                <Step
+                    label="Basics"
+                    child=move || view! { <RecipeInfo file=file current_file=current_file/> }
+                />
+                <Step label="Ingredients" child=move || view! { <RecipeIngredients/> }/>
+                <Step label="Steps" child=move || view! { <RecipeSteps/> }/>
+            </Stepper>
 
             // TODO: Have the save button on the final page
             <button type="submit" class="btn btn-primary">

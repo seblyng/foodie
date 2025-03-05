@@ -1,99 +1,107 @@
 use leptos::prelude::*;
-use std::rc::Rc;
+
+#[component]
+pub fn Stepper(children: Steps) -> impl IntoView {
+    let (step, set_step) = signal(0);
+
+    let steps = children.0();
+    let children_len = steps.len();
+    let labels = steps.iter().map(|it| it.label.clone()).collect::<Vec<_>>();
+    let _steps = steps.clone();
+
+    let _step = move || _steps[step()].child.run();
+
+    view! {
+        <ul class="steps">
+            {labels
+                .into_iter()
+                .enumerate()
+                .map(|(i, label)| {
+                    let class = move || if i <= step() { "step step-primary" } else { "step" };
+                    view! {
+                        <li
+                            on:click=move |_| {
+                                if step() != i {
+                                    set_step(i);
+                                }
+                            }
+
+                            class=class
+                        >
+                            {label}
+                        </li>
+                    }
+                })
+                .collect::<Vec<_>>()}
+
+        </ul>
+
+        {_step()}
+
+        <div class="btm-nav bg-neutral">
+            <button
+                type="button"
+                on:click=move |_| {
+                    if step() > 0 {
+                        set_step(step() - 1);
+                    }
+                }
+            >
+
+                {move || { if step() > 0 { "Previous".into_any() } else { ().into_any() } }}
+            </button>
+            <button
+                type="button"
+                on:click=move |_| {
+                    if step() < children_len - 1 {
+                        set_step(step() + 1);
+                    }
+                }
+            >
+
+                {move || {
+                    if step() < children_len - 1 { "Next".into_any() } else { ().into_any() }
+                }}
+
+            </button>
+        </div>
+    }
+}
 
 #[derive(Clone)]
 pub struct StepStruct {
-    label: String,
-    child: Rc<dyn Fn() -> AnyView>,
+    pub label: String,
+    pub child: ViewFn,
 }
 
-#[component]
-pub fn Stepper() -> impl IntoView {
-    view! {}
-    // let (step, set_step) = signal(starting_step);
-    //
-    // let children = children()
-    //     .as_children()
-    //     .iter()
-    //     .map(|child| {
-    //         child
-    //             .as_transparent()
-    //             .and_then(|t| t.downcast_ref::<StepStruct>())
-    //             .expect("Child of `<Stepper />` should only be `<Step />`")
-    //     })
-    //     .cloned()
-    //     .collect::<Vec<_>>();
-    //
-    // let internal_children = children.clone();
-    // let children_len = children.len();
-    //
-    // let current_step = move || internal_children[step()].child.clone();
-    //
-    // view! {
-    //     <ul class="steps">
-    //         {children
-    //             .into_iter()
-    //             .enumerate()
-    //             .map(|(i, s)| {
-    //                 let class = move || if i <= step() { "step step-primary" } else { "step" };
-    //                 view! {
-    //                     <li
-    //                         on:click=move |_| {
-    //                             if step() != i {
-    //                                 set_step(i);
-    //                             }
-    //                         }
-    //
-    //                         class=class
-    //                     >
-    //                         {s.label}
-    //                     </li>
-    //                 }
-    //             })
-    //             .collect::<Vec<_>>()}
-    //
-    //     </ul>
-    //
-    //     {current_step}
-    //
-    //     <div class="btm-nav bg-neutral">
-    //         <button
-    //             type="button"
-    //             on:click=move |_| {
-    //                 if step() > 0 {
-    //                     set_step(step() - 1);
-    //                 }
-    //             }
-    //         >
-    //
-    //             {move || { if step() > 0 { "Previous".into_any() } else { ().into_any() } }}
-    //         </button>
-    //         <button
-    //             type="button"
-    //             on:click=move |_| {
-    //                 if step() < children_len - 1 {
-    //                     set_step(step() + 1);
-    //                 }
-    //             }
-    //         >
-    //
-    //             {move || {
-    //                 if step() < children_len - 1 { "Next".into_any() } else { ().into_any() }
-    //             }}
-    //
-    //         </button>
-    //     </div>
-    // }
+#[component(transparent)]
+pub fn Step(label: &'static str, #[prop(into)] child: ViewFn) -> StepStruct {
+    StepStruct {
+        label: label.to_string(),
+        child,
+    }
 }
 
-// #[component(transparent)]
-// pub fn Step<F, E>(label: &'static str, child: F) -> impl IntoView
-// where
-//     F: Fn() -> E + 'static,
-//     E: IntoView,
-// {
-//     StepStruct {
-//         label: label.to_string(),
-//         child: Rc::new(move || child().into_any()),
-//     }
-// }
+pub struct Steps(Box<dyn FnOnce() -> Vec<StepStruct>>);
+
+impl<F, C> ToChildren<F> for Steps
+where
+    F: FnOnce() -> C + Send + 'static,
+    C: IntoSteps,
+{
+    #[inline]
+    fn to_children(f: F) -> Self {
+        Steps(Box::new(move || f().into_steps()))
+    }
+}
+
+// TODO(seb): Implement a macro which can implement this for different tuples
+trait IntoSteps {
+    fn into_steps(self) -> Vec<StepStruct>;
+}
+
+impl IntoSteps for (StepStruct, StepStruct, StepStruct) {
+    fn into_steps(self) -> Vec<StepStruct> {
+        vec![self.0, self.1, self.2]
+    }
+}

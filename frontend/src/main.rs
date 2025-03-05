@@ -38,10 +38,10 @@ pub fn main() {
                             <Route path=path!("/") view=public_route!(Home)/>
                             <Route path=path!("/login") view=public_route!(Login)/>
                             <Route path=path!("/profile") view=private_route!(Profile)/>
-                            <Route path=path!("/recipes/:id") view=private_route!(Recipe)/>
-                            <Route path=path!("/recipes/:id/edit") view=private_route!(EditRecipe)/>
                             <Route path=path!("/recipes") view=private_route!(Recipes)/>
                             <Route path=path!("/recipes/create") view=private_route!(CreateRecipe)/>
+                            <Route path=path!("/recipes/:id") view=private_route!(Recipe)/>
+                            <Route path=path!("/recipes/:id/edit") view=private_route!(EditRecipe)/>
                         </Routes>
                     </main>
                 </Router>
