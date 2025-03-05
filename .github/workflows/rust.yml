@@ -78,6 +78,7 @@ jobs:
           AWS_URL: "https://example.com"
 
   deploy:
+    if: github.ref == 'refs/heads/master'
     needs: [backend-test, backend-build, frontend-build]
     runs-on: ubuntu-latest
 

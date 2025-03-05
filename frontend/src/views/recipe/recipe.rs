@@ -1,4 +1,6 @@
-use leptos_router::A;
+use leptos::prelude::*;
+use leptos::task::spawn_local;
+use leptos_router::hooks::{use_navigate, use_params_map};
 use num::rational::Ratio;
 use std::ops::{Add, Sub};
 use std::time::Duration;
@@ -14,8 +16,7 @@ use crate::context::toast::{use_toast, Toast, ToastType, ToasterTrait};
 use crate::views::recipe::recipe_image::RecipeImage;
 use chrono::{NaiveTime, Timelike};
 use common::recipe::{Recipe, RecipeIngredient};
-use leptos::*;
-use leptos_router::{use_navigate, use_params_map, NavigateOptions};
+use leptos_router::NavigateOptions;
 use rust_decimal::prelude::ToPrimitive;
 use rust_decimal::Decimal;
 
@@ -24,10 +25,10 @@ use crate::request::{delete, get};
 #[component]
 pub fn Recipe() -> impl IntoView {
     let params = use_params_map();
-    let id = move || params.with(|params| params.get("id").cloned().unwrap_or_default());
+    let id = move || params.with(|params| params.get("id").unwrap_or_default());
 
-    let recipe = create_resource(id, move |id| async move {
-        get(&format!("/api/recipe/{}", id))
+    let recipe = LocalResource::new(move || async move {
+        get(&format!("/api/recipe/{}", id()))
             .send()
             .await
             .ok()?
@@ -36,13 +37,14 @@ pub fn Recipe() -> impl IntoView {
             .ok()
     });
 
+    let _recipe = move || recipe.get().as_deref().map(|it| it.to_owned());
+
     view! {
         <Transition fallback=Loading>
             {move || {
-                recipe
-                    .get()
+                _recipe()
                     .map(|data| match data {
-                        None => NotFound.into_view(),
+                        None => NotFound.into_any(),
                         Some(r) => {
                             view! {
                                 <div class="flex justify-center w-full">
@@ -54,16 +56,16 @@ pub fn Recipe() -> impl IntoView {
                                                 ingredients=r.ingredients
                                             />
                                             {if let Some(steps) = r.instructions {
-                                                view! { <RecipeSteps steps=steps/> }.into_view()
+                                                view! { <RecipeSteps steps=steps/> }.into_any()
                                             } else {
-                                                ().into_view()
+                                                ().into_any()
                                             }}
 
                                         </div>
                                     </div>
                                 </div>
                             }
-                                .into_view()
+                                .into_any()
                         }
                     })
             }}
@@ -74,10 +76,13 @@ pub fn Recipe() -> impl IntoView {
 
 #[component]
 fn VideoOptions(recipe: Recipe) -> impl IntoView {
-    let (open, set_open) = create_signal(false);
+    let (open, set_open) = signal(false);
     let toast = use_toast().unwrap();
 
+    let navigate = use_navigate();
+
     let on_delete = move |_| {
+        let nav = navigate.clone();
         spawn_local(async move {
             match delete(&format!("/api/recipe/{}", recipe.id)).send().await {
                 Ok(r) if r.ok() => {
@@ -86,8 +91,7 @@ fn VideoOptions(recipe: Recipe) -> impl IntoView {
                         body: "Successfully deleted recipe!".to_string(),
                         timeout: Some(Duration::from_secs(5)),
                     });
-                    let navigate = use_navigate();
-                    navigate("/recipes", NavigateOptions::default());
+                    nav("/recipes", NavigateOptions::default());
                 }
                 _ => {
                     toast.add(Toast {
@@ -110,7 +114,7 @@ fn VideoOptions(recipe: Recipe) -> impl IntoView {
                 class="menu menu-sm dropdown-content mt-3 z-[1] p-2 shadow bg-base-100 rounded-box w-52"
             >
                 <li>
-                    <A href=format!("/recipes/{}/edit", recipe.id)>"Edit recipe"</A>
+                    <a href=format!("/recipes/{}/edit", recipe.id)>"Edit recipe"</a>
                 </li>
                 <li>
                     <button on:click=move |_| set_open(true)>"Delete"</button>
@@ -156,7 +160,7 @@ fn RecipeCard(recipe: Recipe) -> impl IntoView {
     view! {
         <div class="flex w-full justify-center">
             <div class="card lg:card-side bg-neutral">
-                <RecipeImage src=recipe.img/>
+                <RecipeImage src=recipe.img.unwrap_or_default()/>
                 <div class="card-body lg:w-2/5">
                     <h1 class="card-title text-4xl">{recipe.name}</h1>
                     <div class="flex flex-row mt-4">
@@ -185,8 +189,8 @@ fn RecipeFooter(recipe: Recipe) -> impl IntoView {
 
 #[component]
 fn RecipeIngredients(recipe: Recipe, ingredients: Vec<RecipeIngredient>) -> impl IntoView {
-    let internal_ingredients = create_rw_signal(ingredients.clone());
-    let (servings, set_servings) = create_signal(Ratio::new(recipe.servings as i128, 1));
+    let internal_ingredients = RwSignal::new(ingredients.clone());
+    let (servings, set_servings) = signal(Ratio::new(recipe.servings as i128, 1));
 
     let set_ingredients = move |old_serving: Ratio<i128>, new_serving: Ratio<i128>| {
         if new_serving.to_integer() < 0 {

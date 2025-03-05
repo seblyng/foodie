@@ -1,4 +1,4 @@
-use leptos::*;
+use leptos::{prelude::*, task::spawn_local};
 use web_sys::window;
 
 #[component]

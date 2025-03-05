@@ -1,15 +1,15 @@
-use leptos::*;
+use leptos::prelude::{AsyncDerived, LocalStorage};
 
 use crate::request::get;
 
 #[derive(Clone)]
-pub struct AuthContext(pub Resource<(), bool>);
+pub struct AuthContext(pub AsyncDerived<bool, LocalStorage>);
 
 impl AuthContext {
     pub fn setup() -> Self {
-        Self(create_resource(
-            || (),
-            |_| async move { get("/api/me").send().await.is_ok_and(|r| r.ok()) },
-        ))
+        let me = AsyncDerived::new_unsync(|| async move {
+            get("/api/me").send().await.is_ok_and(|r| r.ok())
+        });
+        Self(me)
     }
 }

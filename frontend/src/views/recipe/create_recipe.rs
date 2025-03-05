@@ -1,33 +1,46 @@
-use crate::views::recipe::recipe_form::try_upload_image;
-use leptos_router::{use_navigate, NavigateOptions};
-use std::time::Duration;
-
 use crate::{
     components::stepper::{Step, Stepper},
-    context::toast::{use_toast, Toast, ToastType, ToasterTrait},
-    request::post,
     views::recipe::recipe_form::{
         recipe_info::RecipeInfo, recipe_ingredients::RecipeIngredients, recipe_steps::RecipeSteps,
+        try_upload_image,
     },
+};
+use leptos::{prelude::*, task::spawn_local};
+use leptos_router::{hooks::use_navigate, NavigateOptions};
+use std::time::Duration;
+use web_sys::File;
+
+use crate::{
+    context::toast::{use_toast, Toast, ToastType, ToasterTrait},
+    request::post,
 };
 
 use common::recipe::{CreateRecipe, Recipe};
-use leptos::*;
-use web_sys::File;
 
 use crate::components::form::Form;
 
 #[component]
 pub fn CreateRecipe() -> impl IntoView {
-    let recipe = create_rw_signal(common::recipe::CreateRecipe::default());
+    let recipe = RwSignal::new_with_storage(common::recipe::CreateRecipe::default());
     let toast = use_toast().unwrap();
 
-    let file = create_rw_signal::<Option<File>>(None);
+    let file = signal_local::<Option<File>>(None);
+
+    let navigate = use_navigate();
 
     let on_submit = move |mut create_recipe: CreateRecipe| {
+        let nav = navigate.clone();
         spawn_local(async move {
-            if let Ok(Some(img)) = try_upload_image(file.get_untracked()).await {
-                create_recipe.img = Some(img);
+            match try_upload_image(file.0.get_untracked()).await {
+                Ok(Some(img)) => create_recipe.img = Some(img),
+                Err(_) => {
+                    toast.add(Toast {
+                        ty: ToastType::Error,
+                        body: "Failed to upload image".to_string(),
+                        timeout: Some(Duration::from_secs(5)),
+                    });
+                }
+                _ => (),
             }
 
             let body = serde_json::to_value(create_recipe).unwrap();
@@ -41,14 +54,13 @@ pub fn CreateRecipe() -> impl IntoView {
                         timeout: Some(Duration::from_secs(5)),
                     });
 
-                    let navigate = use_navigate();
                     if let Ok(recipe) = r.json::<Recipe>().await {
-                        navigate(
+                        nav(
                             &format!("/recipes/{}", recipe.id),
                             NavigateOptions::default(),
                         );
                     } else {
-                        navigate("/", NavigateOptions::default());
+                        nav("/", NavigateOptions::default());
                     };
                 }
                 _ => {
@@ -62,7 +74,7 @@ pub fn CreateRecipe() -> impl IntoView {
         })
     };
 
-    let (current_file, _) = create_signal::<Option<String>>(None);
+    let (current_file, _) = signal::<Option<String>>(None);
 
     view! {
         <Form values=recipe on_submit=on_submit>

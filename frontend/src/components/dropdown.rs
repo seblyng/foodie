@@ -1,20 +1,21 @@
-use leptos::*;
+use leptos::prelude::*;
 use wasm_bindgen::JsCast;
+use web_sys::wasm_bindgen;
 
-use crate::{components::input::Input, utils::class_extender::ExtendClass};
+use crate::components::input::Input;
 
 #[component]
 pub fn DropDown<T, U, V, F>(
     items: Vec<DropDownItem<T, U, V>>,
     value: Signal<U>,
     on_change: F,
-    #[prop(optional, into)] class: Option<AttributeValue>,
+    #[prop(optional)] class: String,
     #[prop(optional)] placeholder: &'static str,
 ) -> impl IntoView
 where
-    T: Clone + 'static,
-    U: Eq + PartialEq + Clone + std::hash::Hash + 'static,
-    V: std::fmt::Display + Clone + 'static,
+    T: Clone + 'static + Send + Sync,
+    U: Eq + PartialEq + Clone + std::hash::Hash + 'static + Send + Sync,
+    V: std::fmt::Display + Clone + 'static + Send + Sync,
     F: Fn(U) + 'static + Clone,
 {
     let internal_items = items.clone();
@@ -27,10 +28,8 @@ where
             .unwrap_or_default()
     };
 
-    let class = class.extend_class("dropdown select-bordered");
-
     view! {
-        <div class=class>
+        <div class:dropdown class:select-bordered class=class>
             <Input class="w-full" value=value readonly=true placeholder=placeholder/>
             <ul
                 tabindex="0"

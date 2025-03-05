@@ -1,6 +1,6 @@
+use leptos::prelude::*;
 use std::time::Duration;
 
-use leptos::*;
 use serde::{Deserialize, Serialize};
 
 use crate::context::toast::{use_toast, Toast, ToastType, ToasterTrait};

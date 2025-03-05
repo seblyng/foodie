@@ -1,4 +1,4 @@
-use leptos::*;
+use leptos::prelude::*;
 
 use crate::components::{
     dropdown::{DropDown, DropDownItem},
@@ -15,9 +15,9 @@ pub fn FormFieldSelect<T, V, I, S>(
 ) -> impl IntoView
 where
     T: Fn(Option<V>) + 'static + Clone,
-    V: Clone + 'static,
-    I: Eq + PartialEq + Clone + std::hash::Hash + 'static,
-    S: std::fmt::Display + Clone + 'static,
+    V: Clone + 'static + Send + Sync,
+    I: Eq + PartialEq + Clone + std::hash::Hash + 'static + Send + Sync,
+    S: std::fmt::Display + Clone + 'static + Send + Sync,
 {
     let class = get_span(span);
 

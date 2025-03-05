@@ -5,13 +5,13 @@ use crate::components::icons::{
     modify_icon::ModifyIcon,
 };
 use common::recipe::CreateRecipe;
-use leptos::*;
+use leptos::prelude::*;
 
 #[component]
 pub fn RecipeSteps() -> impl IntoView {
-    let recipe = use_context::<RwSignal<CreateRecipe>>().unwrap();
+    let recipe = use_context::<RwSignal<CreateRecipe, LocalStorage>>().unwrap();
 
-    let instruction = create_rw_signal("".to_string());
+    let instruction = RwSignal::new("".to_string());
 
     let var_name = view! {
         <div class="card w-full bg-neutral">
@@ -19,7 +19,7 @@ pub fn RecipeSteps() -> impl IntoView {
                 <h2 class="card-title">"Add steps to your recipe"</h2>
                 <FormGroup>
                     <FormFieldTextarea
-                        value=instruction
+                        value=Signal::derive(instruction)
                         on_input=move |i| instruction.set(i)
                         placeholder="Instruction"
                     />
@@ -66,7 +66,11 @@ pub fn RecipeSteps() -> impl IntoView {
 }
 
 #[component]
-fn RecipeStepCard(index: usize, step: String, recipe: RwSignal<CreateRecipe>) -> impl IntoView {
+fn RecipeStepCard(
+    index: usize,
+    step: String,
+    recipe: RwSignal<CreateRecipe, LocalStorage>,
+) -> impl IntoView {
     let num_steps = move || recipe().instructions.unwrap_or_default().len();
     let remove_card = move |index: usize| {
         recipe.update(|r| {

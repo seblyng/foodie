@@ -1,4 +1,4 @@
-use leptos::*;
+use leptos::prelude::*;
 
 #[component]
 pub fn FormFieldCheckbox<T>(placeholder: &'static str, on_checked: T) -> impl IntoView

@@ -2113,10 +2113,6 @@ html {
   }
 }
 
-.select-bordered {
-  border-color: var(--fallback-bc,oklch(var(--bc)/0.2));
-}
-
 @keyframes skeleton {
   from {
     background-position: 150%;
@@ -2762,6 +2758,10 @@ html {
 
 .mt-8 {
   margin-top: 2rem;
+}
+
+.inline {
+  display: inline;
 }
 
 .flex {

@@ -1,45 +1,22 @@
-use leptos::{leptos_dom::Transparent, *};
-use std::rc::Rc;
-
-#[derive(Clone)]
-pub struct StepStruct {
-    label: String,
-    child: Rc<dyn Fn() -> View>,
-}
-
-impl IntoView for StepStruct {
-    fn into_view(self) -> View {
-        Transparent::new(self).into_view()
-    }
-}
+use leptos::prelude::*;
 
 #[component]
-pub fn Stepper(#[prop(optional)] starting_step: usize, children: Children) -> impl IntoView {
-    let (step, set_step) = create_signal(starting_step);
+pub fn Stepper(children: Steps) -> impl IntoView {
+    let (step, set_step) = signal(0);
 
-    let children = children()
-        .as_children()
-        .iter()
-        .map(|child| {
-            child
-                .as_transparent()
-                .and_then(|t| t.downcast_ref::<StepStruct>())
-                .expect("Child of `<Stepper />` should only be `<Step />`")
-        })
-        .cloned()
-        .collect::<Vec<_>>();
+    let steps = children.0();
+    let children_len = steps.len();
+    let labels = steps.iter().map(|it| it.label.clone()).collect::<Vec<_>>();
+    let _steps = steps.clone();
 
-    let internal_children = children.clone();
-    let children_len = children.len();
-
-    let current_step = move || internal_children[step()].child.clone();
+    let _step = move || _steps[step()].child.run();
 
     view! {
         <ul class="steps">
-            {children
+            {labels
                 .into_iter()
                 .enumerate()
-                .map(|(i, s)| {
+                .map(|(i, label)| {
                     let class = move || if i <= step() { "step step-primary" } else { "step" };
                     view! {
                         <li
@@ -51,7 +28,7 @@ pub fn Stepper(#[prop(optional)] starting_step: usize, children: Children) -> im
 
                             class=class
                         >
-                            {s.label}
+                            {label}
                         </li>
                     }
                 })
@@ -59,7 +36,7 @@ pub fn Stepper(#[prop(optional)] starting_step: usize, children: Children) -> im
 
         </ul>
 
-        {current_step}
+        {move || _step()}
 
         <div class="btm-nav bg-neutral">
             <button
@@ -71,7 +48,7 @@ pub fn Stepper(#[prop(optional)] starting_step: usize, children: Children) -> im
                 }
             >
 
-                {move || { if step() > 0 { "Previous".into_view() } else { ().into_view() } }}
+                {move || { if step() > 0 { "Previous".into_any() } else { ().into_any() } }}
             </button>
             <button
                 type="button"
@@ -83,7 +60,7 @@ pub fn Stepper(#[prop(optional)] starting_step: usize, children: Children) -> im
             >
 
                 {move || {
-                    if step() < children_len - 1 { "Next".into_view() } else { ().into_view() }
+                    if step() < children_len - 1 { "Next".into_any() } else { ().into_any() }
                 }}
 
             </button>
@@ -91,14 +68,40 @@ pub fn Stepper(#[prop(optional)] starting_step: usize, children: Children) -> im
     }
 }
 
+#[derive(Clone)]
+pub struct StepStruct {
+    pub label: String,
+    pub child: ViewFn,
+}
+
 #[component(transparent)]
-pub fn Step<F, E>(label: &'static str, child: F) -> impl IntoView
-where
-    F: Fn() -> E + 'static,
-    E: IntoView,
-{
+pub fn Step(label: &'static str, #[prop(into)] child: ViewFn) -> StepStruct {
     StepStruct {
         label: label.to_string(),
-        child: Rc::new(move || child().into_view()),
+        child,
+    }
+}
+
+pub struct Steps(Box<dyn FnOnce() -> Vec<StepStruct>>);
+
+impl<F, C> ToChildren<F> for Steps
+where
+    F: FnOnce() -> C + Send + 'static,
+    C: IntoSteps,
+{
+    #[inline]
+    fn to_children(f: F) -> Self {
+        Steps(Box::new(move || f().into_steps()))
+    }
+}
+
+// TODO(seb): Implement a macro which can implement this for different tuples
+trait IntoSteps {
+    fn into_steps(self) -> Vec<StepStruct>;
+}
+
+impl IntoSteps for (StepStruct, StepStruct, StepStruct) {
+    fn into_steps(self) -> Vec<StepStruct> {
+        vec![self.0, self.1, self.2]
     }
 }

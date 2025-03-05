@@ -1,8 +1,10 @@
+use leptos::prelude::*;
+
 use components::navbar::Navbar;
 use components::not_found::NotFound;
 
-use leptos::*;
-use leptos_router::*;
+use leptos_router::components::{Route, Router, Routes};
+use leptos_router::path;
 
 use crate::components::custom_route::{private_route, public_route};
 use crate::context::auth::AuthContext;
@@ -18,14 +20,13 @@ use crate::views::recipe::recipes::Recipes;
 mod components;
 mod context;
 mod request;
-mod utils;
 mod views;
 
 pub fn main() {
     console_error_panic_hook::set_once();
-    provide_context(AuthContext::setup());
 
     mount_to_body(|| {
+        provide_context(AuthContext::setup());
         view! {
             <Toaster>
                 <Router>
@@ -33,15 +34,14 @@ pub fn main() {
                         <Navbar/>
                     </nav>
                     <main class="px-4 pt-4 pb-16 w-full">
-                        <Routes>
-                            <Route path="/" view=public_route!(Home)/>
-                            <Route path="/login" view=public_route!(Login)/>
-                            <Route path="/profile" view=private_route!(Profile)/>
-                            <Route path="/recipes/:id" view=private_route!(Recipe)/>
-                            <Route path="/recipes/:id/edit" view=private_route!(EditRecipe)/>
-                            <Route path="/recipes" view=private_route!(Recipes)/>
-                            <Route path="/recipes/create" view=private_route!(CreateRecipe)/>
-                            <Route path="/*" view=public_route!(NotFound)/>
+                        <Routes fallback=|| NotFound>
+                            <Route path=path!("/") view=public_route!(Home)/>
+                            <Route path=path!("/login") view=public_route!(Login)/>
+                            <Route path=path!("/profile") view=private_route!(Profile)/>
+                            <Route path=path!("/recipes") view=private_route!(Recipes)/>
+                            <Route path=path!("/recipes/create") view=private_route!(CreateRecipe)/>
+                            <Route path=path!("/recipes/:id") view=private_route!(Recipe)/>
+                            <Route path=path!("/recipes/:id/edit") view=private_route!(EditRecipe)/>
                         </Routes>
                     </main>
                 </Router>

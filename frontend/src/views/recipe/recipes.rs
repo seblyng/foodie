@@ -6,8 +6,9 @@ use std::time::Duration;
 
 use chrono::{NaiveTime, Timelike};
 use common::recipe::Recipe;
-use leptos::*;
-use leptos_router::{use_navigate, NavigateOptions, A};
+use leptos::prelude::*;
+use leptos::prelude::{Get, Transition};
+use leptos_router::{hooks::use_navigate, NavigateOptions};
 
 use crate::{
     components::loading::Loading,
@@ -18,34 +19,30 @@ use crate::{
 #[component]
 pub fn Recipes() -> impl IntoView {
     let toast = use_toast().unwrap();
-    let recipes = create_resource(
-        || (),
-        move |_| async move {
-            let res = match get("/api/recipe").send().await {
-                Ok(res) => res,
-                Err(_) => {
-                    toast.add(Toast {
-                        ty: ToastType::Error,
-                        body: "Couldn't fetch recipes".to_string(),
-                        timeout: Some(Duration::from_secs(5)),
-                    });
-                    return None;
-                }
-            };
+    let recipes = LocalResource::new(move || async move {
+        match get("/api/recipe").send().await {
+            Ok(res) => res.json::<Vec<Recipe>>().await.ok(),
+            Err(_) => {
+                toast.add(Toast {
+                    ty: ToastType::Error,
+                    body: "Couldn't fetch recipes".to_string(),
+                    timeout: Some(Duration::from_secs(5)),
+                });
+                None
+            }
+        }
+    });
 
-            res.json::<Vec<Recipe>>().await.ok()
-        },
-    );
+    let _recipes = move || recipes.get().map(|it| it.as_deref().map(|r| r.to_vec()));
 
     view! {
         <div class="p-4 w-full justify-center flex flex-col items-center">
             <div class="grid grid-cols-12 gap-8">
                 <Transition fallback=Loading>
                     {move || {
-                        recipes
-                            .get()
+                        _recipes()
                             .map(|data| match data {
-                                None => NotFound.into_view(),
+                                None => NotFound.into_any(),
                                 Some(r) => {
                                     view! {
                                         <For
@@ -54,12 +51,13 @@ pub fn Recipes() -> impl IntoView {
                                             children=move |recipe| {
                                                 view! {
                                                     <div class="col-span-12 sm:col-span-6 lg:col-span-4">
-                                                        <RecipeCard recipe=recipe/>
+                                                        <RecipeCard recipe=recipe.clone()/>
                                                     </div>
                                                 }
                                             }
                                         />
                                     }
+                                        .into_any()
                                 }
                             })
                     }}
@@ -91,26 +89,26 @@ fn RecipeCard(recipe: Recipe) -> impl IntoView {
         total_time.map(format_time).unwrap_or_default()
     };
 
+    // TODO(seb): Should use <a> instead of use_navigate
+    let navigate = use_navigate();
+
     // TODO: Need to fix it so all images take the same height, and the text span different
     view! {
         <div class="card card-compact max-w-96 h-96 bg-neutral cursor-pointer">
             <figure class="h-full object-cover">
-                <A class="h-full w-full" href=format!("/recipes/{}", recipe.id)>
+                <a href=format!("/recipes/{}", recipe.id)>
                     <img class="h-full w-full object-cover" src=recipe.img alt="Recipe img"/>
-                </A>
+                </a>
             </figure>
             <div
                 on:click=move |_| {
-                    let navigate = use_navigate();
                     navigate(&format!("/recipes/{}", recipe.id), NavigateOptions::default());
                 }
 
                 class="card-body flex flex-row"
             >
                 <div class="flex flex-col">
-                    <A class="card-title" href=format!("/recipes/{}", recipe.id)>
-                        {recipe.name}
-                    </A>
+                    <a href=format!("/recipes/{}", recipe.id)>{recipe.name}</a>
                     <div class="flex flex-row h-5">
                         <ClockIcon/>
                         <p class="ml-1 mr-3 grow-0">{time}</p>

@@ -1,23 +1,22 @@
 use common::user::UserLogin;
-use leptos::*;
-use leptos_router::{use_navigate, NavigateOptions};
+use leptos::{prelude::*, task::spawn_local};
+use leptos_router::{hooks::use_navigate, NavigateOptions};
 
 use crate::{
     components::form::{
         form_fields::form_field_input::{FormFieldInput, FormFieldInputType},
         Form, FormGroup,
     },
-    context::auth::AuthContext,
     views::auth::google_oauth::Google,
 };
 
 #[component]
 pub fn Login() -> impl IntoView {
-    let auth = use_context::<AuthContext>().unwrap().0;
-    let user = create_rw_signal(common::user::UserLogin::default());
+    let user = RwSignal::new_with_storage(common::user::UserLogin::default());
+    let navigate = use_navigate();
 
     let on_submit = move |user: UserLogin| {
-        let navigate = use_navigate();
+        let nav = navigate.clone();
         spawn_local(async move {
             let body = serde_json::to_value(user).unwrap();
             let res = reqwasm::http::Request::post("/api/login")
@@ -28,8 +27,7 @@ pub fn Login() -> impl IntoView {
                 .unwrap();
 
             if res.status() != 401 {
-                auth.refetch();
-                navigate("/", NavigateOptions::default());
+                nav("/", NavigateOptions::default());
             }
         });
     };

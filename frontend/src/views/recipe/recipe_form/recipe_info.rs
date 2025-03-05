@@ -1,12 +1,12 @@
+use leptos::{html, prelude::*};
 use std::time::Duration;
+use web_sys::{File, Url};
 
 use crate::{
     components::icons::file_upload_icon::FileUploadIcon,
     context::toast::{use_toast, Toast, ToastType, ToasterTrait},
 };
 use common::recipe::CreateRecipe;
-use leptos::*;
-use web_sys::{File, Url};
 
 use crate::components::{
     dropdown::DropDownItem,
@@ -24,7 +24,10 @@ use crate::views::recipe::recipe_image::RecipeImage;
 
 #[component]
 pub fn RecipeInfo(
-    file: RwSignal<Option<File>>,
+    file: (
+        ReadSignal<Option<File>, LocalStorage>,
+        WriteSignal<Option<File>, LocalStorage>,
+    ),
     current_file: ReadSignal<Option<String>>,
 ) -> impl IntoView {
     let items = (0..72)
@@ -35,7 +38,7 @@ pub fn RecipeInfo(
         })
         .collect::<Vec<_>>();
 
-    let recipe = use_context::<RwSignal<CreateRecipe>>().unwrap();
+    let recipe = use_context::<RwSignal<CreateRecipe, LocalStorage>>().unwrap();
 
     view! {
         <div class="card w-full bg-neutral">
@@ -52,7 +55,7 @@ pub fn RecipeInfo(
                     />
 
                     <FormFieldSelect
-                        value=(move || recipe().servings).into_signal()
+                        value=Signal::derive(move || recipe().servings)
                         items=items
                         placeholder="Servings"
                         on_change=move |servings| {
@@ -61,7 +64,7 @@ pub fn RecipeInfo(
                     />
 
                     <FormFieldDuration
-                        value=(move || recipe().baking_time.unwrap_or_default()).into_signal()
+                        value=Signal::derive(move || recipe().baking_time.unwrap_or_default())
                         max_hours=72
                         placeholder="Baking time"
                         on_change=move |baking_time| {
@@ -70,7 +73,7 @@ pub fn RecipeInfo(
                     />
 
                     <FormFieldDuration
-                        value=(move || recipe().prep_time.unwrap_or_default()).into_signal()
+                        value=Signal::derive(move || recipe().prep_time.unwrap_or_default())
                         max_hours=72
                         placeholder="Prep time"
                         on_change=move |prep_time| {
@@ -79,7 +82,7 @@ pub fn RecipeInfo(
                     />
 
                     <FormFieldTextarea
-                        value=move || recipe().description
+                        value=Signal::derive(move || recipe().description.unwrap_or_default())
                         on_input=move |desc| recipe.update(|r| r.description = Some(desc))
                         placeholder="Description"
                     />
@@ -91,11 +94,14 @@ pub fn RecipeInfo(
 
 #[component]
 fn FileInput(
-    file: RwSignal<Option<File>>,
+    file: (
+        ReadSignal<Option<File>, LocalStorage>,
+        WriteSignal<Option<File>, LocalStorage>,
+    ),
     current_file: ReadSignal<Option<String>>,
 ) -> impl IntoView {
     let toast = use_toast().unwrap();
-    let file_input = create_node_ref::<html::Input>();
+    let file_input = NodeRef::<html::Input>::new();
 
     let on_change = move |_| {
         let Some(files) = file_input.get().unwrap().files() else {
@@ -111,20 +117,19 @@ fn FileInput(
             return;
         }
 
-        file.set(files.get(0));
+        file.1.set(files.get(0));
+    };
+
+    let img = move || {
+        let blob = file.0().unwrap().slice().unwrap();
+        Url::create_object_url_with_blob(&blob).unwrap().to_string()
     };
 
     let image_view = move || {
-        if file().is_some() {
-            view! {
-                <RecipeImage src=move || {
-                    let blob = file().unwrap().slice().unwrap();
-                    Url::create_object_url_with_blob(&blob).unwrap()
-                }/>
-            }
-            .into_view()
+        if file.0().is_some() {
+            view! { <RecipeImage src=img()/> }.into_any()
         } else if current_file().is_some() {
-            view! { <RecipeImage src=current_file().unwrap()/> }.into_view()
+            view! { <RecipeImage src=current_file().unwrap()/> }.into_any()
         } else {
             view! {
                 <div class="flex flex-col items-center justify-center pt-5 pb-6">
@@ -134,13 +139,13 @@ fn FileInput(
                     </p>
                 </div>
             }
-            .into_view()
+            .into_any()
         }
     };
 
     let style = move || {
         let mut class = "flex justify-center flex-col border-2 rounded-lg cursor-pointer bg-gray-700 border-gray-600 hover:bg-gray-600".to_string();
-        if file().is_none() && current_file().is_none() {
+        if file.0.read().is_none() && current_file().is_none() {
             class.push_str(" min-h-96");
         }
         class
