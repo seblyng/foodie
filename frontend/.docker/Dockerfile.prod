@@ -33,6 +33,7 @@ COPY frontend/rust-toolchain.toml ./rust-toolchain.toml
 COPY frontend/src ./src
 COPY frontend/style ./style
 COPY frontend/tailwind.config.js ./tailwind.config.js
+ENV RUSTFLAGS='--cfg getrandom_backend="wasm_js"'
 
 RUN npm install
 RUN trunk build --release
