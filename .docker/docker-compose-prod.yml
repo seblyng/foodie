@@ -41,7 +41,7 @@ services:
       - GOOGLE_CLIENT_SECRET=$GOOGLE_CLIENT_SECRET
       - BASE_URL=$BASE_URL
       - FRONTEND_URL=$FRONTEND_URL
-      - AWS_URL=https://foodie.lyngjohansen.com/aws/
+      - AWS_URL=https://foodie.lyngjohansen.com
       - AWS_USER=$AWS_USER
       - AWS_PASSWORD=$AWS_PASSWORD
 

@@ -45,7 +45,7 @@ impl FoodieStorage for FoodieAws {
             Method::GET => self
                 .client
                 .get_object()
-                .bucket("images")
+                .bucket("aws")
                 .key(file)
                 .presigned(presigned)
                 .await?
@@ -54,7 +54,7 @@ impl FoodieStorage for FoodieAws {
             Method::POST | Method::PUT => self
                 .client
                 .put_object()
-                .bucket("images")
+                .bucket("aws")
                 .key(file)
                 .presigned(presigned)
                 .await
@@ -64,7 +64,7 @@ impl FoodieStorage for FoodieAws {
             Method::DELETE => self
                 .client
                 .delete_object()
-                .bucket("images")
+                .bucket("aws")
                 .key(file)
                 .presigned(presigned)
                 .await?
@@ -79,7 +79,7 @@ impl FoodieStorage for FoodieAws {
     async fn delete(&self, file: Uuid) -> Result<(), anyhow::Error> {
         self.client
             .delete_object()
-            .bucket("images")
+            .bucket("aws")
             .key(file)
             .send()
             .await?;

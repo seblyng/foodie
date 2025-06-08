@@ -74,7 +74,7 @@ impl From<Recipe> for CreateRecipe {
     fn from(recipe: Recipe) -> Self {
         // Hack to get the image id (name) from the presigned url
         let img = recipe.img.map(|i| {
-            let rest = i.split_once("images/").unwrap();
+            let rest = i.split_once("aws/").unwrap();
             let id = rest.1.chars().take(36).collect::<String>();
             Uuid::from_str(&id).unwrap()
         });
@@ -83,7 +83,7 @@ impl From<Recipe> for CreateRecipe {
             name: recipe.name,
             description: recipe.description,
             instructions: recipe.instructions,
-            img: img,
+            img,
             servings: recipe.servings,
             prep_time: recipe.prep_time,
             baking_time: recipe.baking_time,
