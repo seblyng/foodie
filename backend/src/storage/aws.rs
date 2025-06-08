@@ -16,16 +16,19 @@ pub struct FoodieAws {
 impl FoodieAws {
     pub async fn new() -> Self {
         let aws_url = dotenv::var("AWS_URL").expect("AWS_URL needed");
+        let access_key_id = dotenv::var("AWS_USER").expect("AWS_USER needed");
+        let secret_access_key = dotenv::var("AWS_PASSWORD").expect("AWS_PASSWORD needed");
+
         let aws = aws_config::defaults(BehaviorVersion::latest())
             .endpoint_url(aws_url)
             .credentials_provider(Credentials::new(
-                "admin",
-                "admin",
-                Some("test".to_string()),
+                access_key_id,
+                secret_access_key,
                 None,
-                "testing",
+                None,
+                "static",
             ))
-            .region("sa-east-1");
+            .region("us-east-1");
         let conf = aws.load().await;
         let config_builder = aws_sdk_s3::config::Builder::from(&conf).force_path_style(true);
         let client = S3Client::from_conf(config_builder.build());
@@ -52,7 +55,6 @@ impl FoodieStorage for FoodieAws {
                 .client
                 .put_object()
                 .bucket("images")
-                .content_type("image/png")
                 .key(file)
                 .presigned(presigned)
                 .await

@@ -58,24 +58,18 @@ services:
     volumes:
       - ../.db/foodie_db:/var/lib/postgresql/data
 
-  localstack:
-    networks:
-      - foodie-network
-    container_name: foodie_localstack
-    image: gresau/localstack-persist
+  minio:
+    image: quay.io/minio/minio
+    container_name: minio
     ports:
-      - "127.0.0.1:4566:4566" # LocalStack Gateway
-      - "127.0.0.1:4510-4559:4510-4559" # external services port range
-    environment:
-      - SERVICES=s3
-      - PERSIST_S3=1
-      - DOCKER_HOST=unix:///var/run/docker.sock
-      - EXTRA_CORS_ALLOWED_ORIGINS=*
+      - "9000:9000" # S3-compatible API
+      - "9001:9001" # Web console
     volumes:
-      - "../.db/localstack_data:/persisted-data"
-      - "../.db/localstack:/var/lib/localstack"
-      - "/var/run/docker.sock:/var/run/docker.sock"
-      - ../.aws:/etc/localstack/init/ready.d
+      - ../.db/aws:/data
+    environment:
+      MINIO_ROOT_USER: $AWS_USER
+      MINIO_ROOT_PASSWORD: $AWS_PASSWORD
+    command: server /data --console-address ":9001"
 
 networks:
   foodie-network:
