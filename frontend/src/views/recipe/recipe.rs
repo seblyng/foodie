@@ -37,7 +37,7 @@ pub fn Recipe() -> impl IntoView {
             .ok()
     });
 
-    let _recipe = move || recipe.get().as_deref().map(|it| it.to_owned());
+    let _recipe = move || recipe.get().map(|it| it.to_owned());
 
     view! {
         <Transition fallback=Loading>

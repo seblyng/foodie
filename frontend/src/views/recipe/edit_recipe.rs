@@ -41,7 +41,7 @@ pub fn EditRecipe() -> impl IntoView {
         Some(RwSignal::new_with_storage(CreateRecipe::from(r)))
     });
 
-    let _recipe = move || recipe.get().as_deref().map(|it| it.to_owned());
+    let _recipe = move || recipe.get().map(|it| it.to_owned());
 
     let on_submit = move |mut submit_data: CreateRecipe| {
         let _id = id();

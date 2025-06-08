@@ -13,4 +13,4 @@ command_arguments = ["-c", "npx tailwindcss -i input.css -o style/output.css"]
 backend = "http://localhost:42069/api/"
 
 [serve]
-address = "0.0.0.0"
+addresses = ["0.0.0.0"]

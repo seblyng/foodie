@@ -30,7 +30,7 @@ pub fn Profile() -> impl IntoView {
         res.json::<User>().await.ok()
     });
 
-    let _profile = move || user.get().as_deref().map(|it| it.to_owned());
+    let _profile = move || user.get().map(|it| it.to_owned());
 
     view! {
         <Transition fallback=Loading>
