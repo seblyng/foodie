@@ -41,7 +41,9 @@ services:
       - GOOGLE_CLIENT_SECRET=$GOOGLE_CLIENT_SECRET
       - BASE_URL=$BASE_URL
       - FRONTEND_URL=$FRONTEND_URL
-      - AWS_URL=https://foodie.lyngjohansen.com/images/
+      - AWS_URL=https://foodie.lyngjohansen.com/aws/
+      - AWS_USER=$AWS_USER
+      - AWS_PASSWORD=$AWS_PASSWORD
 
   postgres:
     networks:
@@ -58,9 +60,12 @@ services:
     volumes:
       - ../.db/foodie_db:/var/lib/postgresql/data
 
-  minio:
+  foodie_minio:
+    networks:
+      - foodie-network
     image: quay.io/minio/minio
-    container_name: minio
+    container_name: foodie_minio
+    hostname: foodie_minio
     ports:
       - "9000:9000" # S3-compatible API
       - "9001:9001" # Web console

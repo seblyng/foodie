@@ -2,7 +2,7 @@
     # Handle the reverse proxy for /api/*
     handle {
         reverse_proxy /api* foodie_backend:42069
-        reverse_proxy /images* foodie_localstack:4566
+        reverse_proxy /aws* foodie_minio:9000
     }
 
     handle {
