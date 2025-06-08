@@ -97,7 +97,17 @@ fn RecipeCard(recipe: Recipe) -> impl IntoView {
         <div class="card card-compact max-w-96 h-96 bg-neutral cursor-pointer">
             <figure class="h-full object-cover">
                 <a href=format!("/recipes/{}", recipe.id)>
-                    <img class="h-full w-full object-cover" src=recipe.img alt="Recipe img"/>
+                    <img
+                        class="h-full w-full object-cover"
+                        src=recipe
+                            .img
+                            .unwrap_or_else(|| {
+                                "data:image/svg+xml,%3Csvg width='400' height='300' xmlns='http://www.w3.org/2000/svg'%3E%3Crect width='400' height='300' fill='%23e5e7eb'/%3E%3Cline x1='0' y1='0' x2='400' y2='300' stroke='%239ca3af' stroke-width='8'/%3E%3Cline x1='400' y1='0' x2='0' y2='300' stroke='%239ca3af' stroke-width='8'/%3E%3C/svg%3E"
+                                    .to_string()
+                            })
+
+                        alt="Recipe img"
+                    />
                 </a>
             </figure>
             <div
@@ -105,15 +115,21 @@ fn RecipeCard(recipe: Recipe) -> impl IntoView {
                     navigate(&format!("/recipes/{}", recipe.id), NavigateOptions::default());
                 }
 
-                class="card-body flex flex-row"
+                class="card-body flex flex-col"
             >
-                <div class="flex flex-col">
-                    <a href=format!("/recipes/{}", recipe.id)>{recipe.name}</a>
-                    <div class="flex flex-row h-5">
-                        <ClockIcon/>
-                        <p class="ml-1 mr-3 grow-0">{time}</p>
-                        <ShoppingCartIcon/>
-                        <p class="ml-1">{format_ingredients(recipe.ingredients.len())}</p>
+                <div class="flex flex-col w-full">
+                    <a href=format!("/recipes/{}", recipe.id) class="text-xl font-semibold mb-3">
+                        {recipe.name}
+                    </a>
+                    <div class="flex flex-row justify-between w-full items-center h-5">
+                        <div class="flex flex-row items-center">
+                            <ClockIcon/>
+                            <p class="ml-1">{time}</p>
+                        </div>
+                        <div class="flex flex-row items-center">
+                            <ShoppingCartIcon/>
+                            <p class="ml-1">{format_ingredients(recipe.ingredients.len())}</p>
+                        </div>
                     </div>
                 </div>
             </div>

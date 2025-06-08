@@ -75,7 +75,7 @@ pub fn Recipe() -> impl IntoView {
 }
 
 #[component]
-fn VideoOptions(recipe: Recipe) -> impl IntoView {
+fn RecipeActions(recipe: Recipe) -> impl IntoView {
     let (open, set_open) = signal(false);
     let toast = use_toast().unwrap();
 
@@ -159,15 +159,19 @@ fn RecipeCard(recipe: Recipe) -> impl IntoView {
 
     view! {
         <div class="flex w-full justify-center">
-            <div class="card lg:card-side bg-neutral">
+            <div class="card lg:card-side bg-neutral min-w-[380px] md:min-w-[700px] lg:min-w-[900px] p-4 rounded-xl shadow-lg">
                 <RecipeImage src=recipe.img.unwrap_or_default()/>
                 <div class="card-body lg:w-2/5">
                     <h1 class="card-title text-4xl">{recipe.name}</h1>
-                    <div class="flex flex-row mt-4">
-                        <ClockIcon/>
-                        <p class="ml-1 flex-none mr-3">{time}</p>
-                        <ShoppingCartIcon/>
-                        <p class="ml-1">{format_ingredients(recipe.ingredients.len())}</p>
+                    <div class="flex flex-row mt-4 justify-between items-center w-full">
+                        <div class="flex flex-row items-center">
+                            <ClockIcon/>
+                            <p class="ml-1 flex-none">{time}</p>
+                        </div>
+                        <div class="flex flex-row items-center">
+                            <ShoppingCartIcon/>
+                            <p class="ml-1">{format_ingredients(recipe.ingredients.len())}</p>
+                        </div>
                     </div>
                     <p class="mt-4">{recipe.description}</p>
                     <RecipeFooter recipe=recipe_footer/>
@@ -182,7 +186,7 @@ fn RecipeFooter(recipe: Recipe) -> impl IntoView {
     view! {
         <div class="flex pt-16">
             <p>"Sebastian Lyng Johansen"</p>
-            <VideoOptions recipe=recipe/>
+            <RecipeActions recipe=recipe/>
         </div>
     }
 }
