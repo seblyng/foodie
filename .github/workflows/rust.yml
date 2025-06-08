@@ -76,6 +76,8 @@ jobs:
           FRONTEND_URL: "https://example.com"
           BASE_URL: "https://example.com"
           AWS_URL: "https://example.com"
+          AWS_USER: "foo"
+          AWS_PASSWORD: "foo"
 
   deploy:
     if: github.ref == 'refs/heads/master'
