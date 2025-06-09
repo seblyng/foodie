@@ -1,5 +1,5 @@
 #!/bin/bash
 
+cd backend && sea-orm-cli migrate
 docker compose -f .docker/docker-compose-prod.yml build
 docker compose -f .docker/docker-compose-prod.yml up -d
-cd backend && sea-orm-cli migrate
