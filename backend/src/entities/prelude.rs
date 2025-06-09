@@ -3,5 +3,6 @@
 pub use super::friendships::Entity as Friendships;
 pub use super::ingredients::Entity as Ingredients;
 pub use super::recipe_ingredients::Entity as RecipeIngredients;
+pub use super::recipe_share::Entity as RecipeShare;
 pub use super::recipes::Entity as Recipes;
 pub use super::users::Entity as Users;

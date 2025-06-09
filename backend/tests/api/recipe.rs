@@ -1,6 +1,9 @@
 use backend::entities::{ingredients, recipe_ingredients, recipes};
 use chrono::NaiveTime;
-use common::recipe::{CreateRecipe, CreateRecipeIngredient, Recipe, Unit};
+use common::{
+    recipe::{CreateRecipe, CreateRecipeIngredient, Recipe, Unit},
+    user::{CreateUser, UserLogin},
+};
 use reqwest::StatusCode;
 use rust_decimal::Decimal;
 use sea_orm::{ColumnTrait, EntityTrait, QueryFilter};
@@ -35,6 +38,7 @@ async fn get_pizza_recipe() -> Result<CreateRecipe, anyhow::Error> {
         ingredients: ingredients.to_vec(),
         baking_time: NaiveTime::from_hms_opt(0, 20, 0),
         prep_time: NaiveTime::from_hms_opt(4, 0, 0),
+        shared_with: vec![],
         servings: 4,
     })
 }
@@ -66,6 +70,7 @@ async fn get_pancake_recipe() -> Result<CreateRecipe, anyhow::Error> {
         ingredients: ingredients.to_vec(),
         baking_time: NaiveTime::from_hms_opt(0, 10, 0),
         prep_time: NaiveTime::from_hms_opt(1, 0, 0),
+        shared_with: vec![],
         servings: 4,
     })
 }
@@ -97,6 +102,7 @@ async fn get_toast_recipe() -> Result<CreateRecipe, anyhow::Error> {
         ingredients: ingredients.to_vec(),
         baking_time: NaiveTime::from_hms_opt(0, 11, 0),
         prep_time: NaiveTime::from_hms_opt(0, 10, 0),
+        shared_with: vec![],
         servings: 2,
     })
 }
@@ -299,6 +305,81 @@ async fn test_update_recipe(pool: PgPool) -> Result<(), anyhow::Error> {
         .to_vec(),
         ingredient_names
     );
+
+    Ok(())
+}
+
+#[sqlx::test(migrations = false)]
+async fn test_get_shared_recipes(pool: PgPool) -> Result<(), anyhow::Error> {
+    let app = TestApp::new(pool.clone()).await?;
+    let mut pizza_recipe = get_pizza_recipe().await?;
+    let mut toast_recipe = get_toast_recipe().await?;
+    let mut pancake_recipe = get_pancake_recipe().await?;
+
+    let new_user = app
+        .create_user(&CreateUser {
+            name: "foo".to_string(),
+            email: "bar@bar.com".to_string(),
+            password: "foo".to_string(),
+        })
+        .await?;
+
+    pizza_recipe.shared_with = vec![new_user.id];
+    toast_recipe.shared_with = vec![new_user.id];
+    pancake_recipe.shared_with = vec![new_user.id];
+
+    app.post("api/recipe", Some(&pizza_recipe)).await?;
+    app.post("api/recipe", Some(&pancake_recipe)).await?;
+    app.post("api/recipe", Some(&toast_recipe)).await?;
+
+    app.login(&UserLogin {
+        email: "bar@bar.com".to_string(),
+        password: "foo".to_string(),
+    })
+    .await;
+
+    let res = app.get("api/recipe/shared").await?;
+    let recipes = res.json::<Vec<Recipe>>().await?;
+
+    let get_ingredients = |i: usize| {
+        recipes[i]
+            .ingredients
+            .iter()
+            .map(|i| (i.ingredient_name.as_str(), i.unit, i.amount))
+            .collect::<Vec<_>>()
+    };
+
+    assert_eq!(
+        [
+            ("Flour", Some(Unit::Kilogram), Some(Decimal::from(1))),
+            ("Yiest", Some(Unit::Gram), Some(Decimal::from(20))),
+            ("Water", Some(Unit::Deciliter), Some(Decimal::from(6))),
+        ]
+        .to_vec(),
+        get_ingredients(0)
+    );
+
+    assert_eq!(
+        [
+            ("Flour", Some(Unit::Kilogram), Some(Decimal::from(1))),
+            ("Milk", Some(Unit::Cup), Some(Decimal::from(1))),
+            ("Egg", None, Some(Decimal::from(1))),
+        ]
+        .to_vec(),
+        get_ingredients(1)
+    );
+
+    assert_eq!(
+        [
+            ("Bread", None, Some(Decimal::from(2))),
+            ("Cheese", Some(Unit::Gram), Some(Decimal::from(100))),
+            ("Butter", None, None),
+        ]
+        .to_vec(),
+        get_ingredients(2)
+    );
+
+    assert_eq!(3, recipes.len());
 
     Ok(())
 }

@@ -16,6 +16,8 @@ pub struct CreateRecipe {
     pub prep_time: Option<NaiveTime>,
     pub baking_time: Option<NaiveTime>,
     pub ingredients: Vec<CreateRecipeIngredient>,
+    // user_ids to share the recipe with
+    pub shared_with: Vec<i32>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
@@ -31,6 +33,7 @@ pub struct Recipe {
     pub prep_time: Option<NaiveTime>,
     pub baking_time: Option<NaiveTime>,
     pub ingredients: Vec<RecipeIngredient>,
+    pub shared_with: Vec<i32>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, Copy, Eq, PartialEq, EnumIter, Display)]
@@ -87,6 +90,7 @@ impl From<Recipe> for CreateRecipe {
             servings: recipe.servings,
             prep_time: recipe.prep_time,
             baking_time: recipe.baking_time,
+            shared_with: recipe.shared_with,
             ingredients: recipe
                 .ingredients
                 .into_iter()

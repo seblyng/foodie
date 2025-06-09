@@ -1,7 +1,7 @@
 use crate::{
     app::AppState,
     auth_backend::AuthSession,
-    entities::{ingredients, recipe_ingredients, recipes, sea_orm_active_enums},
+    entities::{ingredients, recipe_ingredients, recipe_share, recipes, sea_orm_active_enums},
     storage::FoodieStorage,
     ApiError,
 };
@@ -51,6 +51,23 @@ where
     .exec_with_returning(&tx)
     .await?;
 
+    let shared_recipes = recipe
+        .shared_with
+        .iter()
+        .map(|id| recipe_share::ActiveModel {
+            id: NotSet,
+            recipe_id: Set(created_recipe.id),
+            created_at: NotSet,
+            shared_with_id: Set(*id),
+        })
+        .collect::<Vec<_>>();
+
+    if !shared_recipes.is_empty() {
+        recipe_share::Entity::insert_many(shared_recipes)
+            .exec(&tx)
+            .await?;
+    }
+
     let models = created_ingredients.into_iter().filter_map(|i| {
         let ri = recipe.ingredients.iter().find(|ri| ri.name == i.name)?;
         Some(recipe_ingredients::ActiveModel {
@@ -82,6 +99,7 @@ where
         updated_at: created_recipe.updated_at,
         prep_time: created_recipe.prep_time,
         baking_time: created_recipe.baking_time,
+        shared_with: recipe.shared_with,
         ingredients,
     }))
 }
@@ -103,6 +121,14 @@ where
         .await?
         .ok_or(ApiError::RecordNotFound)?;
 
+    let shared_with = recipe_share::Entity::find()
+        .filter(recipe_share::Column::RecipeId.eq(recipe_id))
+        .all(&state.db)
+        .await?
+        .iter()
+        .map(|it| it.shared_with_id)
+        .collect::<Vec<_>>();
+
     let ingredients = get_recipe_ingredients(&state.db, recipe_model.id).await?;
 
     let recipe_image = get_presigned_url_for_get(state.storage, recipe_model.img).await?;
@@ -118,31 +144,28 @@ where
         updated_at: recipe_model.updated_at,
         prep_time: recipe_model.prep_time,
         baking_time: recipe_model.baking_time,
+        shared_with,
         ingredients,
     }))
 }
 
-// Gets all the recipes for the user
-pub async fn get_recipes<T>(
-    auth: AuthSession,
-    State(state): State<AppState<T>>,
+async fn _get_recipes<T>(
+    recipes: Vec<(recipes::Model, Vec<recipe_share::Model>)>,
+    state: AppState<T>,
 ) -> Result<Json<Vec<Recipe>>, ApiError>
 where
     T: FoodieStorage + Send + Sync + Clone,
 {
-    let user = auth.user.unwrap();
-    let recipes = recipes::Entity::find()
-        .filter(recipes::Column::UserId.eq(user.id))
-        .all(&state.db)
-        .await?;
+    let rec = recipes
+        .iter()
+        .map(|r| r.0.clone().to_owned())
+        .collect::<Vec<_>>();
 
-    let ingredients = recipes
+    let ingredients = rec
         .load_many_to_many(ingredients::Entity, recipe_ingredients::Entity, &state.db)
         .await?;
 
-    let ingredients_with_units = recipes
-        .load_many(recipe_ingredients::Entity, &state.db)
-        .await?;
+    let ingredients_with_units = rec.load_many(recipe_ingredients::Entity, &state.db).await?;
 
     let recipes = recipes
         .into_iter()
@@ -166,22 +189,23 @@ where
                         })
                         .collect();
 
-                let recipe_image = get_presigned_url_for_get(state, r.0.img)
+                let recipe_image = get_presigned_url_for_get(state, r.0 .0.img)
                     .await
                     .ok()
                     .unwrap_or_default();
 
                 Recipe {
-                    id: r.0.id,
-                    user_id: r.0.user_id,
-                    name: r.0.name,
-                    description: r.0.description,
-                    instructions: r.0.instructions,
+                    id: r.0 .0.id,
+                    user_id: r.0 .0.user_id,
+                    name: r.0 .0.name,
+                    description: r.0 .0.description,
+                    instructions: r.0 .0.instructions,
                     img: recipe_image,
-                    servings: r.0.servings,
-                    updated_at: r.0.updated_at,
-                    prep_time: r.0.prep_time,
-                    baking_time: r.0.baking_time,
+                    servings: r.0 .0.servings,
+                    updated_at: r.0 .0.updated_at,
+                    prep_time: r.0 .0.prep_time,
+                    baking_time: r.0 .0.baking_time,
+                    shared_with: r.0 .1.iter().map(|it| it.shared_with_id).collect(),
                     ingredients,
                 }
             }
@@ -191,6 +215,24 @@ where
     let recipes = join_all(recipes).await;
 
     Ok(Json(recipes))
+}
+
+// Gets all the recipes for the user
+pub async fn get_recipes<T>(
+    auth: AuthSession,
+    State(state): State<AppState<T>>,
+) -> Result<Json<Vec<Recipe>>, ApiError>
+where
+    T: FoodieStorage + Send + Sync + Clone,
+{
+    let user = auth.user.unwrap();
+    let recipes = recipes::Entity::find()
+        .filter(recipes::Column::UserId.eq(user.id))
+        .find_with_related(recipe_share::Entity)
+        .all(&state.db)
+        .await?;
+
+    _get_recipes(recipes, state).await
 }
 
 pub async fn update_recipe<T>(
@@ -263,6 +305,7 @@ where
         updated_at: updated_recipe.updated_at,
         prep_time: updated_recipe.prep_time,
         baking_time: updated_recipe.baking_time,
+        shared_with: recipe.shared_with,
         ingredients,
     }))
 }
@@ -382,6 +425,24 @@ where
         .await;
 
     Ok(ingredients)
+}
+
+// Gets all the recipes shared with the users
+pub async fn get_shared_recipes<T>(
+    auth: AuthSession,
+    State(state): State<AppState<T>>,
+) -> Result<Json<Vec<Recipe>>, ApiError>
+where
+    T: FoodieStorage + Send + Sync + Clone,
+{
+    let user = auth.user.unwrap();
+    let shared_recipes = recipes::Entity::find()
+        .find_with_related(recipe_share::Entity)
+        .filter(recipe_share::Column::SharedWithId.eq(user.id))
+        .all(&state.db)
+        .await?;
+
+    _get_recipes(shared_recipes, state).await
 }
 
 macro_rules! convert_unit {

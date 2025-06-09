@@ -18,7 +18,7 @@ use sea_orm::{
     sea_query::OnConflict,
     ActiveModelTrait,
     ActiveValue::{NotSet, Set},
-    EntityTrait,
+    EntityTrait, IntoActiveModel,
 };
 
 // Send a friend request and make it pending.
@@ -56,7 +56,8 @@ where
     Ok(())
 }
 
-// TODO: Should I restrict something like that the requester can't set the status?
+// TODO: Should I instead have `accept`, `reject`, `block` endpoints instead of this
+// general one?
 pub async fn set_friendship_status<T>(
     auth: AuthSession,
     State(state): State<AppState<T>>,
@@ -80,8 +81,7 @@ where
 
     let friendship = friendships::Entity::find_by_id(id).one(&state.db).await?;
 
-    let friendship: Option<friendships::ActiveModel> = friendship.map(|f| f.into());
-    let Some(mut friendship) = friendship else {
+    let Some(mut friendship) = friendship.map(|f| f.into_active_model()) else {
         return Err(ApiError::RecordNotFound);
     };
 
@@ -93,14 +93,16 @@ where
                 ));
             }
         }
-        FriendshipStatus::Blocked => todo!("Not implemented yet"),
-        FriendshipStatus::Pending | FriendshipStatus::Rejected => {
+        FriendshipStatus::Pending => {
             if friendship.requester_id.as_ref() == &user.id {
                 return Err(ApiError::BadRequest(
                     "Only recipient can accept/reject".to_string(),
                 ));
             }
         }
+        // TODO(seb): What should be possible to do for a `blocked/rejected` friendship?
+        FriendshipStatus::Blocked => todo!("Not implemented yet"),
+        FriendshipStatus::Rejected => todo!("Not implemeted yet"),
     }
 
     friendship.status = Set(friendship_answer.status.into());

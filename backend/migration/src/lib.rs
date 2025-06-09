@@ -9,6 +9,7 @@ mod m20240218_134359_instructions_as_vec;
 mod m20240331_125419_image_to_uuid_column;
 mod m20250609_144836_add_friends_table;
 mod m20250609_174627_add_unique_user_pair_index;
+mod m20250609_200736_add_recipe_share_table;
 
 pub struct Migrator;
 
@@ -25,6 +26,7 @@ impl MigratorTrait for Migrator {
             Box::new(m20240331_125419_image_to_uuid_column::Migration),
             Box::new(m20250609_144836_add_friends_table::Migration),
             Box::new(m20250609_174627_add_unique_user_pair_index::Migration),
+            Box::new(m20250609_200736_add_recipe_share_table::Migration),
         ]
     }
 }
