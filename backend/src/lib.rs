@@ -16,6 +16,7 @@ pub enum ApiError {
     DatabaseError(sea_orm::DbErr),
     UnknownError(String),
     ConflictError(String),
+    BadRequest(String),
 }
 
 #[derive(Serialize, Deserialize)]
@@ -36,6 +37,7 @@ impl IntoResponse for ApiError {
             ),
             ApiError::RecordNotFound => (StatusCode::NOT_FOUND, r#"Record not found"#.to_string()),
             ApiError::ConflictError(err) => (StatusCode::CONFLICT, err),
+            ApiError::BadRequest(err) => (StatusCode::BAD_REQUEST, err),
         };
 
         (

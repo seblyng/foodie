@@ -1,8 +1,9 @@
+mod friends;
 mod recipe;
 
-use axum::{error_handling::HandleErrorLayer, routing::post, Router};
+use axum::error_handling::HandleErrorLayer;
 use axum_login::AuthManagerLayerBuilder;
-use common::user::User;
+use common::user::{CreateUser, User, UserLogin};
 use hyper::StatusCode;
 use migration::MigratorTrait;
 use sea_orm::{ActiveValue::NotSet, DatabaseConnection, EntityTrait, Set, SqlxPostgresConnector};
@@ -11,17 +12,19 @@ use sqlx::PgPool;
 use std::{fmt::Display, future::IntoFuture};
 use tower::ServiceBuilder;
 
-use backend::{app::App, auth_backend::AuthSession, entities::users};
-use reqwest::{IntoUrl, RequestBuilder, Response};
+use backend::{app::App, entities::users};
+use reqwest::{IntoUrl, Response};
 
 struct TestApp {
     pub client: reqwest::Client,
     pub address: String,
+    pub user: users::Model,
     pool: DatabaseConnection,
 }
 
 const TEST_EMAIL: &str = "foo@foo.com";
 const TEST_NAME: &str = "foo";
+const TEST_PASSWORD: &str = "foo";
 
 // TODO: Move this to another place to make the implementation details hidden from the tests.
 // Now the tests are able to access non public fields and methods which I do not like, as they are
@@ -46,53 +49,64 @@ impl TestApp {
             }))
             .layer(AuthManagerLayerBuilder::new(app.backend, app.session_layer).build());
 
-        let router = app
-            .router
-            .merge(
-                Router::new()
-                    .route("/test-login", post(login))
-                    .route("/test-logout", post(logout)),
-            )
-            .layer(auth_service);
+        let router = app.router.layer(auth_service);
 
         let server = axum::serve(listener, router.into_make_service());
         tokio::spawn(server.into_future());
 
         migration::Migrator::up(&connection, None).await?;
 
-        users::Entity::insert(users::ActiveModel {
+        let usermodel = users::Entity::insert(users::ActiveModel {
             id: NotSet,
             email: Set(TEST_EMAIL.to_string()),
             password: NotSet,
             name: Set(TEST_NAME.to_string()),
         })
-        .exec(&app.app_state.db)
+        .exec_with_returning(&app.app_state.db)
         .await?;
 
         let client = reqwest::Client::builder().cookie_store(true).build()?;
+        // HACK: Set an env variable that I read in `register` API.
+        // Not opening up so that anyone can just register a user
+        std::env::set_var("FOODIE_TEST", "1");
 
-        Ok(Self {
+        let _self = Self {
             address,
             client,
+            user: usermodel,
             pool: connection,
-        })
+        };
+
+        _self
+            .create_user(&CreateUser {
+                name: TEST_NAME.to_string(),
+                email: TEST_EMAIL.to_string(),
+                password: TEST_PASSWORD.to_string(),
+            })
+            .await?;
+
+        _self
+            .login(&UserLogin {
+                email: TEST_EMAIL.to_string(),
+                password: TEST_PASSWORD.to_string(),
+            })
+            .await;
+
+        Ok(_self)
     }
 
-    pub async fn post<T, U>(&self, url: U, body: &T) -> Result<Response, anyhow::Error>
+    pub async fn post<T, U>(&self, url: U, body: Option<&T>) -> Result<Response, anyhow::Error>
     where
         U: IntoUrl + Display,
         T: Serialize + ?Sized,
     {
         let url = format!("{}/{}", self.address, url);
-        let req = self.client.request(reqwest::Method::POST, &url).json(body);
-
-        self.assert_logged_in(req.try_clone().unwrap(), &url).await;
-
-        self.login().await;
+        let req = match body {
+            Some(body) => self.client.request(reqwest::Method::POST, &url).json(body),
+            None => self.client.request(reqwest::Method::POST, &url),
+        };
 
         let res = req.send().await?;
-
-        self.logout().await;
 
         Ok(res)
     }
@@ -105,13 +119,7 @@ impl TestApp {
         let url = format!("{}/{}", self.address, url);
         let req = self.client.request(reqwest::Method::PUT, &url).json(body);
 
-        self.assert_logged_in(req.try_clone().unwrap(), &url).await;
-
-        self.login().await;
-
         let res = req.send().await?;
-
-        self.logout().await;
 
         Ok(res)
     }
@@ -120,13 +128,7 @@ impl TestApp {
         let url = format!("{}/{}", self.address, url);
         let req = self.client.request(reqwest::Method::DELETE, &url);
 
-        self.assert_logged_in(req.try_clone().unwrap(), &url).await;
-
-        self.login().await;
-
         let res = req.send().await?;
-
-        self.logout().await;
 
         Ok(res)
     }
@@ -135,61 +137,21 @@ impl TestApp {
         let url = format!("{}/{}", self.address, url);
         let req = self.client.request(reqwest::Method::GET, &url);
 
-        self.assert_logged_in(req.try_clone().unwrap(), &url).await;
-
-        self.login().await;
-
         let res = req.send().await?;
-
-        self.logout().await;
 
         Ok(res)
     }
 
-    async fn login(&self) {
-        self.client
-            .request(
-                reqwest::Method::POST,
-                format!("{}/test-login", self.address),
-            )
-            .send()
-            .await
-            .unwrap();
+    async fn login(&self, input: &UserLogin) {
+        self.post("api/login", Some(input)).await.unwrap();
     }
 
-    async fn logout(&self) {
-        self.client
-            .request(
-                reqwest::Method::POST,
-                format!("{}/test-logout", self.address),
-            )
-            .send()
-            .await
-            .unwrap();
+    async fn create_user(&self, input: &CreateUser) -> Result<User, anyhow::Error> {
+        let user = self
+            .post("api/register", Some(input))
+            .await?
+            .json::<User>()
+            .await?;
+        Ok(user)
     }
-
-    async fn assert_logged_in(&self, req: RequestBuilder, url: &str) {
-        let response = req.send().await.unwrap();
-
-        assert_eq!(
-            response.status(),
-            reqwest::StatusCode::UNAUTHORIZED,
-            "{} is not protected",
-            url
-        );
-    }
-}
-
-async fn login(mut auth: AuthSession) {
-    auth.login(&User {
-        id: 1,
-        name: TEST_NAME.to_string(),
-        email: TEST_EMAIL.to_string(),
-    })
-    .await
-    .unwrap();
-}
-
-async fn logout(mut auth: AuthSession) {
-    auth.logout().await.unwrap();
 }

@@ -20,16 +20,21 @@ pub fn compute_hash(password: &[u8]) -> String {
         .to_string()
 }
 
+fn is_test_env() -> bool {
+    std::env::var("FOODIE_TEST").is_ok_and(|v| v == "1")
+}
+
 pub async fn register(
     State(db): State<DatabaseConnection>,
     Json(create_user): Json<CreateUser>,
-) -> Result<impl IntoResponse, ApiError> {
+) -> Result<Json<User>, ApiError> {
     // TODO: Do not hardcode access to login/create user
-    if create_user.email != "sebastian@lyngjohansen.com" {
-        return Ok(StatusCode::BAD_REQUEST.into_response());
+    // Only hardcode login if not in test env
+    if !is_test_env() && create_user.email != "sebastian@lyngjohansen.com" {
+        return Err(ApiError::UnknownError("Not valid".to_string()));
     }
 
-    users::Entity::insert(users::ActiveModel {
+    let user = users::Entity::insert(users::ActiveModel {
         id: NotSet,
         email: Set(create_user.email),
         password: Set(Some(compute_hash(create_user.password.as_bytes()))),
@@ -40,10 +45,14 @@ pub async fn register(
             .update_column(users::Column::Password)
             .to_owned(),
     )
-    .exec(&db)
+    .exec_with_returning(&db)
     .await?;
 
-    Ok(().into_response())
+    Ok(Json(User {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+    }))
 }
 
 pub async fn login(
