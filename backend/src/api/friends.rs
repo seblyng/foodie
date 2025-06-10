@@ -4,6 +4,7 @@ use crate::{
     entities::{
         friendships,
         sea_orm_active_enums::{self, FriendshipStatus},
+        users,
     },
     storage::FoodieStorage,
     ApiError,
@@ -13,12 +14,12 @@ use axum::{
     response::IntoResponse,
     Json,
 };
-use common::friendship::FriendshipAnswer;
+use common::{friendship::FriendshipAnswer, user::User};
 use sea_orm::{
     sea_query::OnConflict,
     ActiveModelTrait,
     ActiveValue::{NotSet, Set},
-    EntityTrait, IntoActiveModel,
+    ColumnTrait, Condition, ConnectionTrait, EntityTrait, IntoActiveModel, QueryFilter,
 };
 
 // Send a friend request and make it pending.
@@ -109,6 +110,46 @@ where
     friendship.update(&state.db).await?;
 
     Ok(())
+}
+
+pub async fn get_friends<C>(db: &C, user_id: i32) -> Result<Vec<User>, anyhow::Error>
+where
+    C: ConnectionTrait,
+{
+    let friendships = friendships::Entity::find()
+        .filter(
+            Condition::any()
+                .add(friendships::Column::RequesterId.eq(user_id))
+                .add(friendships::Column::RecipientId.eq(user_id)),
+        )
+        .filter(friendships::Column::Status.eq("accepted"))
+        .all(db)
+        .await?;
+
+    let friend_ids: Vec<i32> = friendships
+        .iter()
+        .map(|f| {
+            if f.requester_id == user_id {
+                f.recipient_id
+            } else {
+                f.requester_id
+            }
+        })
+        .collect();
+
+    let friends = users::Entity::find()
+        .filter(users::Column::Id.is_in(friend_ids))
+        .all(db)
+        .await?
+        .into_iter()
+        .map(|it| User {
+            id: it.id,
+            email: it.email,
+            name: it.name,
+        })
+        .collect();
+
+    Ok(friends)
 }
 
 macro_rules! convert_status {

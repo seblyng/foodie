@@ -1,7 +1,11 @@
 use crate::{
+    api::friends::get_friends,
     app::AppState,
     auth_backend::AuthSession,
-    entities::{ingredients, recipe_ingredients, recipe_share, recipes, sea_orm_active_enums},
+    entities::{
+        ingredients, recipe_ingredients, recipe_share, recipes,
+        sea_orm_active_enums::{self},
+    },
     storage::FoodieStorage,
     ApiError,
 };
@@ -63,7 +67,11 @@ where
         .collect::<Vec<_>>();
 
     if !shared_recipes.is_empty() {
-        recipe_share::Entity::insert_many(shared_recipes)
+        let friends = get_friends(&tx, user.id).await?;
+        let filtered_shared_recipes = shared_recipes
+            .into_iter()
+            .filter(|it| friends.iter().any(|f| f.id == *it.shared_with_id.as_ref()));
+        recipe_share::Entity::insert_many(filtered_shared_recipes)
             .exec(&tx)
             .await?;
     }

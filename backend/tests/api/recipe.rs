@@ -1,4 +1,6 @@
-use backend::entities::{ingredients, recipe_ingredients, recipes};
+use backend::entities::{
+    friendships, ingredients, recipe_ingredients, recipes, sea_orm_active_enums::FriendshipStatus,
+};
 use chrono::NaiveTime;
 use common::{
     recipe::{CreateRecipe, CreateRecipeIngredient, Recipe, Unit},
@@ -6,7 +8,7 @@ use common::{
 };
 use reqwest::StatusCode;
 use rust_decimal::Decimal;
-use sea_orm::{ColumnTrait, EntityTrait, QueryFilter};
+use sea_orm::{ActiveValue::Set, ColumnTrait, EntityTrait, QueryFilter};
 use sqlx::PgPool;
 
 use crate::TestApp;
@@ -327,6 +329,15 @@ async fn test_get_shared_recipes(pool: PgPool) -> Result<(), anyhow::Error> {
     pizza_recipe.shared_with = vec![new_user.id];
     toast_recipe.shared_with = vec![new_user.id];
     pancake_recipe.shared_with = vec![new_user.id];
+
+    friendships::Entity::insert(friendships::ActiveModel {
+        status: Set(FriendshipStatus::Accepted),
+        requester_id: Set(app.user.id),
+        recipient_id: Set(new_user.id),
+        ..Default::default()
+    })
+    .exec(&app.pool)
+    .await?;
 
     app.post("api/recipe", Some(&pizza_recipe)).await?;
     app.post("api/recipe", Some(&pancake_recipe)).await?;
