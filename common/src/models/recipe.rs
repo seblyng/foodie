@@ -51,6 +51,27 @@ pub enum Unit {
     Clove,
     Pinch,
 }
+impl FromStr for Unit {
+    type Err = ();
+
+    fn from_str(input: &str) -> Result<Self, Self::Err> {
+        match input {
+            "Milligram" => Ok(Self::Milligram),
+            "Gram" => Ok(Self::Gram),
+            "Hectogram" => Ok(Self::Hectogram),
+            "Kilogram" => Ok(Self::Kilogram),
+            "Milliliter" => Ok(Self::Milliliter),
+            "Deciliter" => Ok(Self::Deciliter),
+            "Liter" => Ok(Self::Liter),
+            "Teaspoon" => Ok(Self::Teaspoon),
+            "Tablespoon" => Ok(Self::Tablespoon),
+            "Cup" => Ok(Self::Cup),
+            "Clove" => Ok(Self::Clove),
+            "Pinch" => Ok(Self::Pinch),
+            _ => Err(()),
+        }
+    }
+}
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, Default)]
 pub struct CreateRecipeIngredient {

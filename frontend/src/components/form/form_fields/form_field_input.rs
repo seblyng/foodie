@@ -1,51 +1,25 @@
-use crate::components::{form::form_fields::get_span, input::Input};
-use leptos::{prelude::*, tachys::html::property::IntoProperty};
-use std::fmt::Display;
-
-pub enum FormFieldInputType {
-    Text,
-    Number,
-    Email,
-    Password,
-}
-
-impl Display for FormFieldInputType {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            FormFieldInputType::Text => write!(f, "text"),
-            FormFieldInputType::Password => write!(f, "password"),
-            FormFieldInputType::Email => write!(f, "email"),
-            FormFieldInputType::Number => write!(f, "number"),
-        }
-    }
-}
+use leptos::prelude::*;
+use thaw::*;
 
 #[component]
-pub fn FormFieldInput<T, U>(
-    value: U,
-    ty: FormFieldInputType,
-    placeholder: &'static str,
-    on_input: T,
-    #[prop(optional)] span: &'static str,
-) -> impl IntoView
-where
-    T: Fn(String) + 'static,
-    U: IntoProperty + Clone + Send + Sync,
-{
-    let class = get_span(span);
-
+pub fn FormFieldInput(
+    #[prop(optional, into)] name: MaybeProp<String>,
+    #[prop(optional, into)] value: thaw_utils::Model<String>,
+    #[prop(optional, into)] placeholder: MaybeProp<String>,
+    #[prop(optional, into)] input_type: Signal<InputType>,
+    #[prop(optional, into)] rules: Vec<InputRule>,
+) -> impl IntoView {
     view! {
-        <div class=class>
-            <Input
-                value=value
-                placeholder=placeholder
-                ty=ty.to_string()
-                class="w-full"
-                on:input=move |ev| {
-                    on_input(event_target_value(&ev));
-                }
-            />
-
+        <div class="col-span-12">
+            <Field name=name>
+                <Input
+                    rules=rules
+                    value=value
+                    placeholder=placeholder
+                    input_type=input_type
+                    class="w-full"
+                />
+            </Field>
         </div>
     }
 }

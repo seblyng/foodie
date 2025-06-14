@@ -1,15 +1,17 @@
 use leptos::prelude::*;
 
-use components::navbar::Navbar;
 use components::not_found::NotFound;
 
 use leptos_router::components::{Route, Router, Routes};
 use leptos_router::path;
+use thaw::{ConfigProvider, Layout, Theme, ToasterProvider};
 
 use crate::components::custom_route::{private_route, public_route};
+use crate::components::navbar::Navbar;
 use crate::context::auth::AuthContext;
 use crate::context::toast::Toaster;
 use crate::views::auth::login_page::Login;
+use crate::views::friends::friends::Friends;
 use crate::views::home::Home;
 use crate::views::profile::Profile;
 use crate::views::recipe::create_recipe::CreateRecipe;
@@ -25,27 +27,49 @@ mod views;
 pub fn main() {
     console_error_panic_hook::set_once();
 
-    mount_to_body(|| {
-        provide_context(AuthContext::setup());
-        view! {
-            <Toaster>
-                <Router>
-                    <nav class="sticky top-0 z-[9999]">
-                        <Navbar/>
-                    </nav>
-                    <main class="px-4 pt-4 pb-16 w-full">
-                        <Routes fallback=|| NotFound>
-                            <Route path=path!("/") view=public_route!(Home)/>
-                            <Route path=path!("/login") view=public_route!(Login)/>
-                            <Route path=path!("/profile") view=private_route!(Profile)/>
-                            <Route path=path!("/recipes") view=private_route!(Recipes)/>
-                            <Route path=path!("/recipes/create") view=private_route!(CreateRecipe)/>
-                            <Route path=path!("/recipes/:id") view=private_route!(Recipe)/>
-                            <Route path=path!("/recipes/:id/edit") view=private_route!(EditRecipe)/>
-                        </Routes>
-                    </main>
-                </Router>
-            </Toaster>
-        }
-    })
+    mount_to_body(App)
+}
+
+#[component]
+pub fn App() -> impl IntoView {
+    let theme = RwSignal::new(Theme::dark());
+
+    provide_context(AuthContext::setup());
+
+    view! {
+        <ConfigProvider theme>
+            <Layout position=thaw::LayoutPosition::Absolute>
+                <ToasterProvider>
+                    <Toaster>
+                        <Router>
+                            <Navbar />
+                            <main class="px-4 pt-4 pb-16 w-full">
+                                <Routes fallback=|| NotFound>
+                                    <Route path=path!("/") view=public_route!(Home) />
+                                    <Route path=path!("/login") view=public_route!(Login) />
+                                    <Route path=path!("/profile") view=private_route!(Profile) />
+                                    <Route path=path!("/recipes") view=private_route!(Recipes) />
+                                    <Route
+                                        path=path!("/recipes/create")
+                                        view=private_route!(CreateRecipe)
+                                    />
+                                    <Route path=path!("/recipes/:id") view=private_route!(Recipe) />
+                                    <Route
+                                        path=path!("/recipes/:id/edit")
+                                        view=private_route!(EditRecipe)
+                                    />
+                                    <Route
+                                        path=path!("/recipes/:id/edit")
+                                        view=private_route!(EditRecipe)
+                                    />
+
+                                    <Route path=path!("/friends") view=private_route!(Friends) />
+                                </Routes>
+                            </main>
+                        </Router>
+                    </Toaster>
+                </ToasterProvider>
+            </Layout>
+        </ConfigProvider>
+    }
 }

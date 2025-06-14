@@ -8,8 +8,8 @@ edition = "2021"
 [dependencies]
 common = { path = "../common"}
 anyhow = "1.0.71"
-leptos = { version = "0.8.2", features = ["nightly", "csr"] }
-leptos_router = { version = "0.8.2" }
+leptos = { version = "0.7.8", features = ["nightly", "csr"] }
+leptos_router = { version = "0.7.8" }
 reqwasm = "0.5.0"
 serde = { version = "1.0.160", features = ["derive"] }
 serde-wasm-bindgen = "0.6.0"
@@ -21,3 +21,6 @@ rust_decimal = "1.34.3"
 num = "0.4.3"
 uuid = { version = "1.14", features = ["v4", "rng-getrandom"]}
 getrandom = { version = "0.3", features = ["wasm_js"]}
+thaw = { version = "0.4.7", features = ["csr", "nightly"] }
+icondata = "0.6.0"
+thaw_utils = { version = "0.1.2", features = ["csr", "nightly"] }

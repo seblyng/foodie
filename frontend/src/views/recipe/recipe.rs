@@ -4,13 +4,9 @@ use leptos_router::hooks::{use_navigate, use_params_map};
 use num::rational::Ratio;
 use std::ops::{Add, Sub};
 use std::time::Duration;
+use thaw::*;
 
-use crate::components::icons::more_vertical_icon::MoreVerticalIcon;
-use crate::components::icons::plus_icon::PlusIcon;
-use crate::components::icons::shopping_cart_icon::ShoppingCartIcon;
-use crate::components::icons::{clock_icon::ClockIcon, minus_icon::MinusIcon};
 use crate::components::loading::Loading;
-use crate::components::modal::Modal;
 use crate::components::not_found::NotFound;
 use crate::context::toast::{use_toast, Toast, ToastType, ToasterTrait};
 use crate::views::recipe::recipe_image::RecipeImage;
@@ -37,7 +33,7 @@ pub fn Recipe() -> impl IntoView {
             .ok()
     });
 
-    let _recipe = move || recipe.get().map(|it| it.to_owned());
+    let _recipe = move || recipe.get().as_deref().map(|it| it.to_owned());
 
     view! {
         <Transition fallback=Loading>
@@ -49,14 +45,14 @@ pub fn Recipe() -> impl IntoView {
                             view! {
                                 <div class="flex justify-center w-full">
                                     <div class="flex flex-col max-w-[1408px]">
-                                        <RecipeCard recipe=r.clone()/>
+                                        <RecipeCard recipe=r.clone() />
                                         <div class="flex flex-wrap gap-x-12 justify-center mt-8">
                                             <RecipeIngredients
                                                 recipe=r.clone()
                                                 ingredients=r.ingredients
                                             />
                                             {if let Some(steps) = r.instructions {
-                                                view! { <RecipeSteps steps=steps/> }.into_any()
+                                                view! { <RecipeSteps steps=steps /> }.into_any()
                                             } else {
                                                 ().into_any()
                                             }}
@@ -75,12 +71,37 @@ pub fn Recipe() -> impl IntoView {
 }
 
 #[component]
-fn RecipeActions(recipe: Recipe) -> impl IntoView {
-    let (open, set_open) = signal(false);
+fn RecipeCard(recipe: Recipe) -> impl IntoView {
+    let _recipe = recipe.clone();
     let toast = use_toast().unwrap();
+    let time = move || {
+        let total_time = match (_recipe.prep_time, _recipe.baking_time) {
+            (Some(prep_time), Some(baking_time)) => NaiveTime::from_hms_opt(
+                prep_time.hour() + baking_time.hour(),
+                prep_time.minute() + baking_time.minute(),
+                0,
+            ),
+            (Some(prep_time), None) => Some(prep_time),
+            (None, Some(baking_time)) => Some(baking_time),
+            (None, None) => None,
+        };
+
+        total_time.map(format_time).unwrap_or_default()
+    };
+    let open = RwSignal::new(false);
 
     let navigate = use_navigate();
 
+    let on_select = move |key: String| {
+        let nav = navigate.clone();
+        match key.as_ref() {
+            "edit" => nav(&format!("/recipes/{}/edit", recipe.id), Default::default()),
+            "delete" => open.set(true),
+            _ => unreachable!(),
+        };
+    };
+
+    let navigate = use_navigate();
     let on_delete = move |_| {
         let nav = navigate.clone();
         spawn_local(async move {
@@ -105,88 +126,60 @@ fn RecipeActions(recipe: Recipe) -> impl IntoView {
     };
 
     view! {
-        <div class="dropdown dropdown-end">
-            <div tabindex="0" role="button" class="btn btn-xs btn-circle bg-neutral border-none">
-                <MoreVerticalIcon/>
-            </div>
-            <ul
-                tabindex="0"
-                class="menu menu-sm dropdown-content mt-3 z-[1] p-2 shadow bg-base-100 rounded-box w-52"
-            >
-                <li>
-                    <a href=format!("/recipes/{}/edit", recipe.id)>"Edit recipe"</a>
-                </li>
-                <li>
-                    <button on:click=move |_| set_open(true)>"Delete"</button>
-                </li>
-            </ul>
-
-            <Modal open=open set_open=set_open>
-                <h3 class="font-bold text-lg">"Delete recipe"</h3>
-                <p class="py-4">"Are you sure you want to delete the recipe?"</p>
-                <div class="modal-action">
-                    <form method="dialog">
-                        <button on:click=on_delete class="btn">
-                            "Yes"
-                        </button>
-                        <button class="btn">"No"</button>
-                    </form>
-                </div>
-            </Modal>
-        </div>
-    }
-}
-
-#[component]
-fn RecipeCard(recipe: Recipe) -> impl IntoView {
-    let _recipe = recipe.clone();
-    let time = move || {
-        let total_time = match (_recipe.prep_time, _recipe.baking_time) {
-            (Some(prep_time), Some(baking_time)) => NaiveTime::from_hms_opt(
-                prep_time.hour() + baking_time.hour(),
-                prep_time.minute() + baking_time.minute(),
-                0,
-            ),
-            (Some(prep_time), None) => Some(prep_time),
-            (None, Some(baking_time)) => Some(baking_time),
-            (None, None) => None,
-        };
-
-        total_time.map(format_time).unwrap_or_default()
-    };
-
-    let recipe_footer = recipe.clone();
-
-    view! {
         <div class="flex w-full justify-center">
-            <div class="card lg:card-side bg-neutral min-w-[380px] md:min-w-[700px] lg:min-w-[900px] p-4 rounded-xl shadow-lg">
-                <RecipeImage src=recipe.img.unwrap_or_default()/>
-                <div class="card-body lg:w-2/5">
-                    <h1 class="card-title text-4xl">{recipe.name}</h1>
-                    <div class="flex flex-row mt-4 justify-between items-center w-full">
-                        <div class="flex flex-row items-center">
-                            <ClockIcon/>
-                            <p class="ml-1 flex-none">{time}</p>
-                        </div>
-                        <div class="flex flex-row items-center">
-                            <ShoppingCartIcon/>
-                            <p class="ml-1">{format_ingredients(recipe.ingredients.len())}</p>
-                        </div>
-                    </div>
-                    <p class="mt-4">{recipe.description}</p>
-                    <RecipeFooter recipe=recipe_footer/>
-                </div>
-            </div>
-        </div>
-    }
-}
+            <Card>
+                <CardHeader>
+                    <Body1>{recipe.name}</Body1>
+                    <CardHeaderAction slot>
+                        <Menu position=MenuPosition::BottomStart on_select=on_select>
+                            <MenuTrigger slot>
+                                <Button
+                                    appearance=ButtonAppearance::Transparent
+                                    icon=icondata::AiMoreOutlined
+                                />
+                            </MenuTrigger>
+                            <MenuItem value="edit">"Edit"</MenuItem>
+                            <MenuItem value="delete">"Delete"</MenuItem>
+                        </Menu>
 
-#[component]
-fn RecipeFooter(recipe: Recipe) -> impl IntoView {
-    view! {
-        <div class="flex pt-16">
-            <p>"Sebastian Lyng Johansen"</p>
-            <RecipeActions recipe=recipe/>
+                        <Dialog open>
+                            <DialogSurface>
+                                <DialogBody>
+                                    <DialogTitle>"Delete recipe"</DialogTitle>
+                                    <DialogContent>
+                                        "Are you sure you want to delete the recipe?"
+                                    </DialogContent>
+                                    <DialogActions>
+                                        <Button
+                                            on:click=on_delete
+                                            appearance=ButtonAppearance::Primary
+                                        >
+                                            "Yes"
+                                        </Button>
+                                        <Button on:click=move |_| open.set(false)>"No"</Button>
+                                    </DialogActions>
+                                </DialogBody>
+                            </DialogSurface>
+                        </Dialog>
+                    </CardHeaderAction>
+                </CardHeader>
+                <CardPreview>
+                    <img
+                        src="https://s3.bmp.ovh/imgs/2021/10/2c3b013418d55659.jpg"
+                        style="width: 100%"
+                    />
+                </CardPreview>
+                <CardFooter>
+                    <Flex align=FlexAlign::Center>
+                        <Icon icon=icondata::AiClockCircleOutlined />
+                        <p class="ml-1 flex-none">{time}</p>
+                    </Flex>
+                    <Flex align=FlexAlign::Center>
+                        <Icon icon=icondata::AiShoppingCartOutlined />
+                        <p class="ml-1">{format_ingredients(recipe.ingredients.len())}</p>
+                    </Flex>
+                </CardFooter>
+            </Card>
         </div>
     }
 }
@@ -228,23 +221,19 @@ fn RecipeIngredients(recipe: Recipe, ingredients: Vec<RecipeIngredient>) -> impl
     view! {
         <div class="flex flex-col w-full md:w-1/3 mb-12">
             <h1 class="text-2xl">"Ingredients"</h1>
-            <div class="flex justify-center content-center p-4 mb-1 justify-between">
-                <button
-                    type="button"
-                    class="btn border-none btn-square btn-sm bg-base-100"
+            <Flex align=FlexAlign::Center>
+                <Button
+                    appearance=ButtonAppearance::Transparent
+                    icon=icondata::AiMinusCircleOutlined
                     on:click=move |_| { set_ingredients(servings(), servings().sub(1)) }
-                >
-                    <MinusIcon/>
-                </button>
+                />
                 <p>{move || format!("{} servings", servings())}</p>
-                <button
-                    type="button"
-                    class="btn border-none btn-square btn-sm bg-base-100"
+                <Button
+                    appearance=ButtonAppearance::Transparent
+                    icon=icondata::AiPlusCircleOutlined
                     on:click=move |_| { set_ingredients(servings(), servings().add(1)) }
-                >
-                    <PlusIcon/>
-                </button>
-            </div>
+                />
+            </Flex>
             {move || {
                 internal_ingredients()
                     .into_iter()
@@ -300,9 +289,9 @@ fn RecipeSteps(steps: Vec<String>) -> impl IntoView {
 
 fn format_time(time: NaiveTime) -> String {
     match (time.hour(), time.minute()) {
-        (h, m) if h >= 1 && m >= 1 => format!("{} h {} min", h, m),
-        (h, _) if h >= 1 => format!("{} h", h),
-        (_, m) if m >= 1 => format!("{} min", m),
+        (h, m) if h >= 1 && m >= 1 => format!("{h} h {m} min"),
+        (h, _) if h >= 1 => format!("{h} h"),
+        (_, m) if m >= 1 => format!("{m} min"),
         _ => "".to_string(),
     }
 }

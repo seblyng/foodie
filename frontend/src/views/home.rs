@@ -1,5 +1,6 @@
 use leptos::prelude::*;
 use std::time::Duration;
+use thaw::*;
 
 use serde::{Deserialize, Serialize};
 
@@ -14,7 +15,7 @@ struct RecipeImage {
 pub fn Home() -> impl IntoView {
     view! {
         <div>
-            <ToastTest/>
+            <ToastTest />
         </div>
     }
 }
@@ -49,15 +50,9 @@ fn ToastTest() -> impl IntoView {
 
     view! {
         <div>
-            <button class="btn btn-primary" on:click=error_toast>
-                Add error toast
-            </button>
-            <button class="btn btn-primary" on:click=warning_toast>
-                Add warning toast
-            </button>
-            <button class="btn btn-primary" on:click=success_toast>
-                Add success toast
-            </button>
+            <Button on:click=error_toast>Add error toast</Button>
+            <Button on:click=warning_toast>Add warning toast</Button>
+            <Button on:click=success_toast>Add success toast</Button>
         </div>
     }
 }

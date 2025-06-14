@@ -1,8 +1,6 @@
-use crate::components::{
-    icons::{clock_icon::ClockIcon, shopping_cart_icon::ShoppingCartIcon},
-    not_found::NotFound,
-};
+use crate::components::not_found::NotFound;
 use std::time::Duration;
+use thaw::*;
 
 use chrono::{NaiveTime, Timelike};
 use common::recipe::Recipe;
@@ -21,7 +19,14 @@ pub fn Recipes() -> impl IntoView {
     let toast = use_toast().unwrap();
     let recipes = LocalResource::new(move || async move {
         match get("/api/recipe").send().await {
-            Ok(res) => res.json::<Vec<Recipe>>().await.ok(),
+            Ok(res) => {
+                let res = res.json::<Vec<Recipe>>().await.ok();
+                if let Some(r) = res {
+                    Some(vec![r[0].clone(), r[0].clone(), r[0].clone(), r[0].clone()])
+                } else {
+                    Some(vec![])
+                }
+            }
             Err(_) => {
                 toast.add(Toast {
                     ty: ToastType::Error,
@@ -51,7 +56,7 @@ pub fn Recipes() -> impl IntoView {
                                             children=move |recipe| {
                                                 view! {
                                                     <div class="col-span-12 sm:col-span-6 lg:col-span-4">
-                                                        <RecipeCard recipe=recipe.clone()/>
+                                                        <RecipeCard recipe=recipe.clone() />
                                                     </div>
                                                 }
                                             }
@@ -94,46 +99,36 @@ fn RecipeCard(recipe: Recipe) -> impl IntoView {
 
     // TODO: Need to fix it so all images take the same height, and the text span different
     view! {
-        <div class="card card-compact max-w-96 h-96 bg-neutral cursor-pointer">
-            <figure class="h-full object-cover">
-                <a href=format!("/recipes/{}", recipe.id)>
-                    <img
-                        class="h-full w-full object-cover"
-                        src=recipe
-                            .img
-                            .unwrap_or_else(|| {
-                                "data:image/svg+xml,%3Csvg width='400' height='300' xmlns='http://www.w3.org/2000/svg'%3E%3Crect width='400' height='300' fill='%23e5e7eb'/%3E%3Cline x1='0' y1='0' x2='400' y2='300' stroke='%239ca3af' stroke-width='8'/%3E%3Cline x1='400' y1='0' x2='0' y2='300' stroke='%239ca3af' stroke-width='8'/%3E%3C/svg%3E"
-                                    .to_string()
-                            })
-
-                        alt="Recipe img"
-                    />
-                </a>
-            </figure>
-            <div
-                on:click=move |_| {
-                    navigate(&format!("/recipes/{}", recipe.id), NavigateOptions::default());
-                }
-
-                class="card-body flex flex-col"
-            >
+        <Card
+            class="cursor-pointer"
+            on:click=move |_| {
+                navigate(&format!("/recipes/{}", recipe.id), NavigateOptions::default());
+            }
+        >
+            <CardPreview>
+                <img
+                    src="https://s3.bmp.ovh/imgs/2021/10/2c3b013418d55659.jpg"
+                    style="width: 100%"
+                />
+            </CardPreview>
+            <CardFooter>
                 <div class="flex flex-col w-full">
                     <a href=format!("/recipes/{}", recipe.id) class="text-xl font-semibold mb-3">
                         {recipe.name}
                     </a>
-                    <div class="flex flex-row justify-between w-full items-center h-5">
-                        <div class="flex flex-row items-center">
-                            <ClockIcon/>
-                            <p class="ml-1">{time}</p>
-                        </div>
-                        <div class="flex flex-row items-center">
-                            <ShoppingCartIcon/>
+                    <CardFooter>
+                        <Flex align=FlexAlign::Center>
+                            <Icon icon=icondata::AiClockCircleOutlined />
+                            <p class="ml-1 flex-none">{time}</p>
+                        </Flex>
+                        <Flex align=FlexAlign::Center>
+                            <Icon icon=icondata::AiShoppingCartOutlined />
                             <p class="ml-1">{format_ingredients(recipe.ingredients.len())}</p>
-                        </div>
-                    </div>
+                        </Flex>
+                    </CardFooter>
                 </div>
-            </div>
-        </div>
+            </CardFooter>
+        </Card>
     }
 }
 
@@ -141,9 +136,9 @@ fn RecipeCard(recipe: Recipe) -> impl IntoView {
 // Right now they are duplicated in both here and in the single recipe component
 fn format_time(time: NaiveTime) -> String {
     match (time.hour(), time.minute()) {
-        (h, m) if h >= 1 && m >= 1 => format!("{} h {} min", h, m),
-        (h, _) if h >= 1 => format!("{} h", h),
-        (_, m) if m >= 1 => format!("{} min", m),
+        (h, m) if h >= 1 && m >= 1 => format!("{h} h {m} min"),
+        (h, _) if h >= 1 => format!("{h} h"),
+        (_, m) if m >= 1 => format!("{m} min"),
         _ => "".to_string(),
     }
 }

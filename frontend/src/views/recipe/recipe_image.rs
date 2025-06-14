@@ -1,4 +1,5 @@
 use leptos::prelude::*;
+use thaw::*;
 
 #[component]
 pub fn RecipeImage(#[prop(optional, into)] src: Option<String>) -> impl IntoView {
@@ -15,13 +16,10 @@ pub fn RecipeImage(#[prop(optional, into)] src: Option<String>) -> impl IntoView
     let (current_src, set_current_src) = signal(img_src);
 
     view! {
-        <figure class="w-full">
-            <img
-                class="rounded-lg object-cover aspect-[4/3]"
-                src=current_src
-                alt="Recipe img"
-                on:error=move |_| set_current_src.set(placeholder.clone())
-            />
-        </figure>
+        <Image
+            src=current_src
+            alt="Recipe img"
+            on:error=move |_| set_current_src.set(placeholder.clone())
+        />
     }
 }
