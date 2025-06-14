@@ -1,33 +1,24 @@
 use leptos::prelude::*;
+use thaw::FieldContextProvider;
 use web_sys::SubmitEvent;
 
-pub mod form_fields;
-
 #[component]
-pub fn Form<T, U>(
-    values: RwSignal<T, LocalStorage>,
-    children: Children,
-    on_submit: U,
-) -> impl IntoView
+pub fn NewForm<U>(children: Children, on_submit: U) -> impl IntoView
 where
-    T: 'static + Clone,
-    U: Fn(T) + 'static,
+    U: Fn(SubmitEvent) + 'static,
 {
-    provide_context(values);
-
     let internal_on_submit = move |e: SubmitEvent| {
         e.prevent_default();
-        on_submit(values.get());
+        on_submit(e);
     };
 
-    // TODO: Add on dirty to add save button or something
     view! {
         <div class="p-4 mb-4 w-full justify-center flex flex-col items-center">
             <form
                 on:submit=internal_on_submit
                 class="grid grid-auto-columns max-w-2xl w-full gap-4"
             >
-                {children()}
+                <FieldContextProvider>{children()}</FieldContextProvider>
             </form>
         </div>
     }

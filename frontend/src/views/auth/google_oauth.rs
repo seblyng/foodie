@@ -1,4 +1,5 @@
 use leptos::{prelude::*, task::spawn_local};
+use thaw::*;
 use web_sys::window;
 
 #[component]
@@ -17,7 +18,7 @@ pub fn Google() -> impl IntoView {
         });
     };
     view! {
-        <button on:click=login class="btn">
+        <Button appearance=ButtonAppearance::Primary on:click=login>
             <img
                 class="w-6 h-6"
                 src="https://www.svgrepo.com/show/475656/google-color.svg"
@@ -25,6 +26,6 @@ pub fn Google() -> impl IntoView {
                 alt="google logo"
             />
             <span>Login with Google</span>
-        </button>
+        </Button>
     }
 }
