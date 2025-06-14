@@ -1,5 +1,5 @@
 use crate::{
-    components::form::NewForm,
+    components::form::Form,
     views::recipe::recipe_form::{
         recipe_info::RecipeInfo, recipe_ingredients::RecipeIngredients, recipe_steps::RecipeSteps,
         try_upload_image,
@@ -85,7 +85,7 @@ pub fn CreateRecipe() -> impl IntoView {
     let (current_file, _) = signal::<Option<String>>(None);
 
     view! {
-        <NewForm on_submit=on_submit>
+        <Form on_submit=on_submit>
             <RecipeInfo file=file current_file=current_file />
             <RecipeIngredients />
             <RecipeSteps />
@@ -97,6 +97,6 @@ pub fn CreateRecipe() -> impl IntoView {
             <Button appearance=ButtonAppearance::Primary button_type=ButtonType::Submit>
                 {"Save"}
             </Button>
-        </NewForm>
+        </Form>
     }
 }

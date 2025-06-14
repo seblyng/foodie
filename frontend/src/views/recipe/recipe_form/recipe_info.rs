@@ -1,9 +1,10 @@
-use chrono::Timelike;
 use leptos::prelude::*;
 use std::time::Duration;
 use thaw::*;
 use web_sys::{File, Url};
 
+use crate::components::form::form_fields::form_field_input::FormFieldInput;
+use crate::components::form::form_fields::form_field_number_input::FormFieldNumberInput;
 use crate::context::toast::{use_toast, Toast, ToastType, ToasterTrait};
 use common::recipe::CreateRecipe;
 
@@ -20,19 +21,12 @@ pub fn RecipeInfo(
 ) -> impl IntoView {
     let recipe = use_context::<RwSignal<CreateRecipe>>().unwrap();
     let name = slice!(recipe.name);
-    let servings = create_slice(
-        recipe,
-        |r| r.servings.to_string(),
-        |r, s: String| r.servings = s.parse::<i32>().unwrap_or_default(),
-    );
+    let servings = RwSignal::new(0);
 
-    let fi = |start: usize, end: usize| {
-        (start..=end)
-            .map(|i| {
-                view! { <ComboboxOption value=i.to_string() text=i.to_string() /> }
-            })
-            .collect::<Vec<_>>()
-    };
+    Effect::new(move || {
+        let serv = servings();
+        recipe.update(|r| r.servings = serv);
+    });
 
     let description = create_slice(
         recipe,
@@ -44,13 +38,34 @@ pub fn RecipeInfo(
         <div>
             <FormGroup>
                 <FileInput file=file current_file=current_file />
-                <div class="col-span-12">
-                    <Input class="w-full" value=name placeholder="Name" />
-                </div>
+                <FormFieldInput
+                    name="name"
+                    placeholder="Name"
+                    value=name
+                    rules=vec![InputRule::required(true.into())]
+                />
 
-                <Combobox class="col-span-12" value=servings placeholder="Servings">
-                    {move || fi(0, 72)}
-                </Combobox>
+                <FormFieldNumberInput<
+                i32,
+            >
+                    name="servings"
+                    step_page=1
+                    placeholder="Servings"
+                    value=servings
+                    rules=vec![
+                        SpinButtonRule::validator(move |v: &i32, _| {
+                            if (0..=72).contains(v) {
+                                Ok(())
+                            } else {
+                                Err(
+                                    FieldValidationState::Error(
+                                        "Must be a number between 0 and 72".to_string(),
+                                    ),
+                                )
+                            }
+                        }),
+                    ]
+                />
 
                 <RecipeDuration recipe />
 
@@ -62,54 +77,76 @@ pub fn RecipeInfo(
 
 #[component]
 fn RecipeDuration(recipe: RwSignal<CreateRecipe>) -> impl IntoView {
-    let baking_time_minutes = create_slice(
-        recipe,
-        |r| {
-            r.baking_time
-                .map(|it| it.minute())
-                .unwrap_or_default()
-                .to_string()
-        },
-        move |r, s: String| {
-            let total_minutes = s.parse::<u32>().unwrap();
-            let hours = total_minutes / 60;
-            let minutes = total_minutes % 60;
-            r.baking_time = Some(chrono::NaiveTime::from_hms_opt(hours, minutes, 0).unwrap());
-        },
-    );
+    let baking_time_minutes = RwSignal::new(0);
 
-    let prep_time_minutes = create_slice(
-        recipe,
-        |r| {
-            r.prep_time
-                .map(|it| it.minute())
-                .unwrap_or_default()
-                .to_string()
-        },
-        move |r, s: String| {
-            let total_minutes = s.parse::<u32>().unwrap();
-            let hours = total_minutes / 60;
-            let minutes = total_minutes % 60;
-            r.prep_time = Some(chrono::NaiveTime::from_hms_opt(hours, minutes, 0).unwrap());
-        },
-    );
+    Effect::new(move || {
+        let total_minutes = baking_time_minutes();
+        let hours = total_minutes / 60;
+        let minutes = total_minutes % 60;
+        if let Some(baking_time) = chrono::NaiveTime::from_hms_opt(hours, minutes, 0) {
+            recipe.update(|r| {
+                r.baking_time = Some(baking_time);
+            });
+        }
+    });
 
-    let fi = |start: usize, end: usize| {
-        (start..=end)
-            .map(|i| {
-                view! { <ComboboxOption value=i.to_string() text=i.to_string() /> }
-            })
-            .collect::<Vec<_>>()
-    };
+    let prep_time_minutes = RwSignal::new(0);
+
+    Effect::new(move || {
+        let total_minutes = prep_time_minutes();
+        let hours = total_minutes / 60;
+        let minutes = total_minutes % 60;
+        if let Some(prep_time) = chrono::NaiveTime::from_hms_opt(hours, minutes, 0) {
+            recipe.update(|r| {
+                r.prep_time = Some(prep_time);
+            });
+        }
+    });
 
     view! {
-        <Combobox class="col-span-6 md:col-span-3" value=baking_time_minutes placeholder="Minutes">
-            {move || fi(0, 500)}
-        </Combobox>
+        <FormFieldNumberInput<
+        u32,
+    >
+            name="baking_time"
+            step_page=1
+            placeholder="Baking time minutes"
+            value=baking_time_minutes
+            rules=vec![
+                SpinButtonRule::validator(move |v: &u32, _| {
+                    if (0..=500).contains(v) {
+                        Ok(())
+                    } else {
+                        Err(
+                            FieldValidationState::Error(
+                                "Must be a number between 0 and 500".to_string(),
+                            ),
+                        )
+                    }
+                }),
+            ]
+        />
 
-        <Combobox class="col-span-6 md:col-span-3" value=prep_time_minutes placeholder="Minutes">
-            {move || fi(0, 500)}
-        </Combobox>
+        <FormFieldNumberInput<
+        u32,
+    >
+            name="prep_time"
+            step_page=1
+            placeholder="Prep time minutes"
+            value=prep_time_minutes
+            rules=vec![
+                SpinButtonRule::validator(move |v: &u32, _| {
+                    if (0..=500).contains(v) {
+                        Ok(())
+                    } else {
+                        Err(
+                            FieldValidationState::Error(
+                                "Must be a number between 0 and 500".to_string(),
+                            ),
+                        )
+                    }
+                }),
+            ]
+        />
     }
 }
 

@@ -1,25 +1,34 @@
 use leptos::prelude::*;
-use thaw::FieldContextProvider;
+use thaw::{FieldContextInjection, FieldContextProvider};
 use web_sys::SubmitEvent;
 
-#[component]
-pub fn NewForm<U>(children: Children, on_submit: U) -> impl IntoView
-where
-    U: Fn(SubmitEvent) + 'static,
-{
-    let internal_on_submit = move |e: SubmitEvent| {
-        e.prevent_default();
-        on_submit(e);
-    };
+pub mod form_fields;
 
+#[component]
+pub fn Form<U>(children: Children, on_submit: U) -> impl IntoView
+where
+    U: Fn(SubmitEvent) + 'static + Send + Sync,
+{
     view! {
         <div class="p-4 mb-4 w-full justify-center flex flex-col items-center">
-            <form
-                on:submit=internal_on_submit
-                class="grid grid-auto-columns max-w-2xl w-full gap-4"
-            >
-                <FieldContextProvider>{children()}</FieldContextProvider>
-            </form>
+            <FieldContextProvider>
+                <form
+                    on:submit={
+                        let field_context = FieldContextInjection::expect_context();
+                        move |e: SubmitEvent| {
+                            e.prevent_default();
+                            if field_context.validate() {
+                                on_submit(e);
+                            }
+                        }
+                    }
+                    class="grid grid-auto-columns max-w-2xl w-full gap-4"
+                >
+
+                    {children()}
+                    <input type="reset" />
+                </form>
+            </FieldContextProvider>
         </div>
     }
 }

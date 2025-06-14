@@ -1,8 +1,8 @@
+use crate::components::form::form_fields::form_field_number_input::FormFieldNumberInput;
 use crate::components::form::FormGroup;
 use common::recipe::{CreateRecipe, CreateRecipeIngredient, Unit};
 use common::strum::IntoEnumIterator;
 use leptos::prelude::*;
-use num::ToPrimitive;
 use rust_decimal::Decimal;
 use thaw::*;
 
@@ -27,11 +27,15 @@ pub fn RecipeIngredients() -> impl IntoView {
     // it with these that are not a separate component.
     // let amount = slice!(recipe.amount);
     let name = slice!(recipe_ingredient.name);
-    let amount = create_slice(
-        recipe_ingredient,
-        |ri| Decimal::to_f64(&ri.amount.unwrap_or_default()).unwrap(),
-        |ri, n: f64| ri.amount = Decimal::from_f64_retain(n),
-    );
+    let amount = RwSignal::new(0.0);
+
+    Effect::new(move || {
+        let a = amount();
+        recipe_ingredient.update(|ri| {
+            ri.amount = Decimal::from_f64_retain(a);
+        });
+    });
+
     let selected = create_slice(
         recipe_ingredient,
         |ri| ri.unit.map(|u| u.to_string()).unwrap_or_default(),
@@ -39,44 +43,34 @@ pub fn RecipeIngredients() -> impl IntoView {
     );
 
     view! {
-        <div class="card w-full bg-neutral">
-            <div class="card-body">
-                <h2 class="card-title">"Add ingredients to your recipe"</h2>
-                <FormGroup>
-                    <div class="col-span-6 md:col-span-3">
-                        <SpinButton<
-                        f64,
-                    >
-                            placeholder="Servings"
-                            class="w-full"
-                            value=amount
-                            step_page=1.0
-                            min=0.0
-                            max=72.0
-                        />
-                    </div>
+        <div>
+            <h2 class="card-title">"Add ingredients to your recipe"</h2>
+            <FormGroup>
+                <FormFieldNumberInput<
+                f64,
+            > name="amount" step_page=1.0 placeholder="Amount" value=amount />
 
-                    <Combobox class="col-span-6 md:col-span-3" value=selected placeholder="Unit">
-                        {_units}
-                    </Combobox>
+                <Combobox class="col-span-6 md:col-span-3" value=selected placeholder="Unit">
+                    {_units}
+                </Combobox>
 
-                    <Input class="md:col-span-6" value=name placeholder="Name" />
-                </FormGroup>
-                <Button
-                    class="col-span-12"
-                    button_type=ButtonType::Button
-                    on:click=move |_| {
-                        recipe
-                            .update(|r| {
-                                r.ingredients.push(recipe_ingredient.get_untracked());
-                                recipe_ingredient.set(CreateRecipeIngredient::default());
-                            })
-                    }
-                >
+                <Input class="md:col-span-6" value=name placeholder="Name" />
+            </FormGroup>
 
-                    "Add to ingredient list"
-                </Button>
-            </div>
+            <Button
+                class="col-span-12"
+                button_type=ButtonType::Button
+                on:click=move |_| {
+                    recipe
+                        .update(|r| {
+                            r.ingredients.push(recipe_ingredient.get_untracked());
+                            recipe_ingredient.set(CreateRecipeIngredient::default());
+                        })
+                }
+            >
+
+                "Add to ingredient list"
+            </Button>
         </div>
 
         <ul>

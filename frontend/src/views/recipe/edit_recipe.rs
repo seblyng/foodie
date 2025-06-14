@@ -1,4 +1,4 @@
-use crate::components::form::NewForm;
+use crate::components::form::Form;
 use crate::views::recipe::recipe_form::recipe_info::RecipeInfo;
 use crate::views::recipe::recipe_form::recipe_ingredients::RecipeIngredients;
 use crate::views::recipe::recipe_form::recipe_steps::RecipeSteps;
@@ -94,7 +94,7 @@ pub fn EditRecipe() -> impl IntoView {
                         Some(r) => {
                             provide_context(r);
                             view! {
-                                <NewForm on_submit=on_submit>
+                                <Form on_submit=on_submit>
                                     <RecipeInfo file=file current_file=current_file />
                                     <RecipeIngredients />
                                     <RecipeSteps />
@@ -102,7 +102,7 @@ pub fn EditRecipe() -> impl IntoView {
                                     <button type="submit" class="btn btn-primary">
                                         {"Save"}
                                     </button>
-                                </NewForm>
+                                </Form>
                             }
                                 .into_any()
                         }

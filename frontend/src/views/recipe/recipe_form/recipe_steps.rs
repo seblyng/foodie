@@ -10,32 +10,27 @@ pub fn RecipeSteps() -> impl IntoView {
     let instruction = RwSignal::new("".to_string());
 
     let var_name = view! {
-        <div class="card w-full bg-neutral">
-            <div class="card-body">
-                <h2 class="card-title">"Add steps to your recipe"</h2>
-                <FormGroup>
-                    <Textarea class="col-span-12" value=instruction placeholder="Instruction" />
-                    <Button
-                        button_type=ButtonType::Button
-                        class="col-span-12"
-                        on:click=move |_| {
-                            recipe
-                                .update(|r| {
-                                    if let Some(ref mut instructions) = r.instructions {
-                                        instructions.push(instruction.get_untracked());
-                                    } else {
-                                        r.instructions = Some(vec![instruction.get_untracked()]);
-                                    }
-                                    instruction.set("".to_string());
-                                })
-                        }
-                    >
+        <FormGroup>
+            <Textarea class="col-span-12" value=instruction placeholder="Instruction" />
+            <Button
+                button_type=ButtonType::Button
+                class="col-span-12"
+                on:click=move |_| {
+                    recipe
+                        .update(|r| {
+                            if let Some(ref mut instructions) = r.instructions {
+                                instructions.push(instruction.get_untracked());
+                            } else {
+                                r.instructions = Some(vec![instruction.get_untracked()]);
+                            }
+                            instruction.set("".to_string());
+                        })
+                }
+            >
 
-                        "Add to instructions"
-                    </Button>
-                </FormGroup>
-            </div>
-        </div>
+                "Add to instructions"
+            </Button>
+        </FormGroup>
 
         <ul>
             // This is not so good since it rerenders the entire list on each change. However, it was a

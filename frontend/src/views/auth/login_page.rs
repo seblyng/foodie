@@ -3,25 +3,21 @@ use leptos_router::{hooks::use_navigate, NavigateOptions};
 use thaw::*;
 
 use crate::{
-    components::form::{FormGroup, NewForm},
+    components::form::{form_fields::form_field_input::FormFieldInput, Form, FormGroup},
     views::auth::google_oauth::Google,
 };
 
 #[component]
 pub fn Login() -> impl IntoView {
     let navigate = use_navigate();
-    let email = RwSignal::new(String::new());
-    let password = RwSignal::new(String::new());
+    let user = RwSignal::new(common::user::UserLogin::default());
+    let email = slice!(user.email);
+    let password = slice!(user.password);
 
     let on_submit_foo = move |_| {
         let nav = navigate.clone();
         spawn_local(async move {
-            let user = common::user::UserLogin {
-                email: email(),
-                password: password(),
-            };
-
-            let body = serde_json::to_value(user).unwrap();
+            let body = serde_json::to_value(user.get_untracked()).unwrap();
             let res = reqwasm::http::Request::post("/api/login")
                 .header("content-type", "application/json")
                 .body(body.to_string())
@@ -37,28 +33,30 @@ pub fn Login() -> impl IntoView {
 
     view! {
         <div class="flex justify-center h-navbar-screen">
-
-            <NewForm on_submit=on_submit_foo>
+            <Form on_submit=on_submit_foo>
                 <FormGroup>
-                    <div class="col-span-12">
-                        <Input value=email placeholder="Email" class="w-full" />
-                    </div>
+                    <FormFieldInput
+                        name="email"
+                        rules=vec![InputRule::required(true.into())]
+                        value=email
+                        placeholder="Email"
+                    />
 
-                    <div class="col-span-12">
-                        <Input
-                            input_type=InputType::Password
-                            value=password
-                            placeholder="Password"
-                            class="w-full"
-                        />
-                    </div>
+                    <FormFieldInput
+                        name="password"
+                        input_type=InputType::Password
+                        rules=vec![InputRule::required(true.into())]
+                        value=password
+                        placeholder="Password"
+                    />
+
                     <Button class="col-span-12" button_type=ButtonType::Submit>
                         "Submit"
                     </Button>
 
                 </FormGroup>
                 <Google />
-            </NewForm>
+            </Form>
         </div>
     }
 }
