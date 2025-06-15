@@ -25,17 +25,12 @@ COPY frontend/Cargo.toml ./Cargo.toml
 COPY frontend/Trunk.toml ./Trunk.toml
 COPY frontend/index.html ./index.html
 COPY frontend/input.css ./input.css
-COPY frontend/package-lock.json ./package-lock.json
-COPY frontend/package.json ./package.json
 COPY frontend/public ./public
 COPY frontend/img ./img
 COPY frontend/rust-toolchain.toml ./rust-toolchain.toml
 COPY frontend/src ./src
-COPY frontend/style ./style
-COPY frontend/tailwind.config.js ./tailwind.config.js
 ENV RUSTFLAGS='--cfg getrandom_backend="wasm_js"'
 
-RUN npm install
 # TODO: For some reason, --release breaks things
 RUN trunk build
 
