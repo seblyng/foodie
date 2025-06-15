@@ -91,7 +91,7 @@ pub fn Navbar() -> impl IntoView {
                 <Menu position=MenuPosition::BottomStart on_select=on_select.clone()>
                     <MenuTrigger slot>
                         <Button
-                            class="lg:hidden"
+                            class="lg:!hidden"
                             appearance=ButtonAppearance::Transparent
                             icon=icondata::ChMenuHamburger
                         />
@@ -108,19 +108,11 @@ pub fn Navbar() -> impl IntoView {
 
             </Flex>
 
-            <Flex>
-                <Link class="hidden lg:flex" href="/">
-                    "Home"
-                </Link>
-                <Link class="hidden lg:flex" href="/recipes">
-                    "Recipes"
-                </Link>
-                <Link class="hidden lg:flex" href="/recipes/create">
-                    "Create recipes"
-                </Link>
-                <Link class="hidden lg:flex" href="/friends">
-                    "Friends"
-                </Link>
+            <Flex class="lg:!flex !hidden">
+                <Link href="/">"Home"</Link>
+                <Link href="/recipes">"Recipes"</Link>
+                <Link href="/recipes/create">"Create recipes"</Link>
+                <Link href="/friends">"Friends"</Link>
             </Flex>
 
             <Flex>
