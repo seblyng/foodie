@@ -5,6 +5,7 @@ use web_sys::{File, Url};
 
 use crate::components::form::form_fields::form_field_input::FormFieldInput;
 use crate::components::form::form_fields::form_field_number_input::FormFieldNumberInput;
+use crate::components::form::form_fields::form_field_textarea::FormFieldTextarea;
 use crate::context::toast::{use_toast, Toast, ToastType, ToasterTrait};
 use common::recipe::CreateRecipe;
 
@@ -35,41 +36,46 @@ pub fn RecipeInfo(
     );
 
     view! {
-        <div>
-            <FormGroup>
-                <FileInput file=file current_file=current_file />
-                <FormFieldInput
-                    name="name"
-                    placeholder="Name"
-                    value=name
-                    rules=vec![InputRule::required(true.into())]
-                />
+        <FormGroup>
+            <FileInput file=file current_file=current_file />
+            <FormFieldInput
+                name="name"
+                class="col-span-12"
+                placeholder="Name"
+                value=name
+                rules=vec![InputRule::required(true.into())]
+            />
 
-                <FormFieldNumberInput<i32>
-                    name="servings"
-                    step_page=1
-                    placeholder="Servings"
-                    value=servings
-                    rules=vec![
-                        SpinButtonRule::validator(move |v: &i32, _| {
-                            if (0..=72).contains(v) {
-                                Ok(())
-                            } else {
-                                Err(
-                                    FieldValidationState::Error(
-                                        "Must be a number between 0 and 72".to_string(),
-                                    ),
-                                )
-                            }
-                        }),
-                    ]
-                />
+            <FormFieldNumberInput<i32>
+                class="col-span-12"
+                name="servings"
+                step_page=1
+                placeholder="Servings"
+                value=servings
+                rules=vec![
+                    SpinButtonRule::validator(move |v: &i32, _| {
+                        if (0..=72).contains(v) {
+                            Ok(())
+                        } else {
+                            Err(
+                                FieldValidationState::Error(
+                                    "Must be a number between 0 and 72".to_string(),
+                                ),
+                            )
+                        }
+                    }),
+                ]
+            />
 
-                <RecipeDuration recipe />
+            <RecipeDuration recipe />
 
-                <Textarea class="col-span-12" value=description placeholder="Description" />
-            </FormGroup>
-        </div>
+            <FormFieldTextarea
+                name="description"
+                class="col-span-12"
+                value=description
+                placeholder="Description"
+            />
+        </FormGroup>
     }
 }
 
@@ -101,45 +107,30 @@ fn RecipeDuration(recipe: RwSignal<CreateRecipe>) -> impl IntoView {
         }
     });
 
+    let valid_time = |v: &u32| match (0..=500).contains(v) {
+        true => Ok(()),
+        false => Err(FieldValidationState::Error(
+            "Must be a number between 0 and 500".to_string(),
+        )),
+    };
+
     view! {
         <FormFieldNumberInput<u32>
+            class="col-span-12"
             name="baking_time"
             step_page=1
             placeholder="Baking time minutes"
             value=baking_time_minutes
-            rules=vec![
-                SpinButtonRule::validator(move |v: &u32, _| {
-                    if (0..=500).contains(v) {
-                        Ok(())
-                    } else {
-                        Err(
-                            FieldValidationState::Error(
-                                "Must be a number between 0 and 500".to_string(),
-                            ),
-                        )
-                    }
-                }),
-            ]
+            rules=vec![SpinButtonRule::validator(move |v: &u32, _| valid_time(v))]
         />
 
         <FormFieldNumberInput<u32>
+            class="col-span-12"
             name="prep_time"
             step_page=1
             placeholder="Prep time minutes"
             value=prep_time_minutes
-            rules=vec![
-                SpinButtonRule::validator(move |v: &u32, _| {
-                    if (0..=500).contains(v) {
-                        Ok(())
-                    } else {
-                        Err(
-                            FieldValidationState::Error(
-                                "Must be a number between 0 and 500".to_string(),
-                            ),
-                        )
-                    }
-                }),
-            ]
+            rules=vec![SpinButtonRule::validator(move |v: &u32, _| valid_time(v))]
         />
     }
 }
@@ -166,9 +157,11 @@ fn FileInput(
             view! { <RecipeImage src=current_file().unwrap() /> }.into_any()
         } else {
             view! {
-                <UploadDragger class="h-full">
-                    <Icon icon=icondata::AiCloudUploadOutlined />
-                    <p>"Upload image for your recipe"</p>
+                <UploadDragger class="flex min-h-96 items-center justify-center">
+                    <div class="flex items-center justify-center">
+                        <Icon icon=icondata::AiCloudUploadOutlined />
+                        <p>"Upload image for your recipe"</p>
+                    </div>
                 </UploadDragger>
             }
             .into_any()
@@ -190,7 +183,7 @@ fn FileInput(
 
     view! {
         <div class="col-span-12">
-            <Upload accept="image/*" custom_request class="flex flex-col">
+            <Upload accept="image/*" custom_request class="flex flex-col min-h-96">
                 {image_view}
             </Upload>
 

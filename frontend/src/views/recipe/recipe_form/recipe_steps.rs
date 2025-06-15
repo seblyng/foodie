@@ -1,4 +1,4 @@
-use crate::components::form::FormGroup;
+use crate::components::form::{form_fields::form_field_textarea::FormFieldTextarea, FormGroup};
 use common::recipe::CreateRecipe;
 use leptos::prelude::*;
 use thaw::*;
@@ -9,9 +9,14 @@ pub fn RecipeSteps() -> impl IntoView {
 
     let instruction = RwSignal::new("".to_string());
 
-    let var_name = view! {
+    view! {
         <FormGroup>
-            <Textarea class="col-span-12" value=instruction placeholder="Instruction" />
+            <FormFieldTextarea
+                name="instruction"
+                class="col-span-12"
+                value=instruction
+                placeholder="Instruction"
+            />
             <Button
                 button_type=ButtonType::Button
                 class="col-span-12"
@@ -30,26 +35,24 @@ pub fn RecipeSteps() -> impl IntoView {
 
                 "Add to instructions"
             </Button>
+            <ul class="col-span-12">
+                // This is not so good since it rerenders the entire list on each change. However, it was a
+                // bit tricky to find a good way to do it with `<For>`, since I want to be able to remove a
+                // specific element, and the index is easy to do it. This works for now
+                {move || {
+                    let steps = recipe().instructions.unwrap_or_default();
+                    steps
+                        .into_iter()
+                        .enumerate()
+                        .map(|(index, step)| {
+                            view! { <RecipeStepCard index=index step=step recipe=recipe /> }
+                        })
+                        .collect::<Vec<_>>()
+                }}
+
+            </ul>
         </FormGroup>
-
-        <ul>
-            // This is not so good since it rerenders the entire list on each change. However, it was a
-            // bit tricky to find a good way to do it with `<For>`, since I want to be able to remove a
-            // specific element, and the index is easy to do it. This works for now
-            {move || {
-                let steps = recipe().instructions.unwrap_or_default();
-                steps
-                    .into_iter()
-                    .enumerate()
-                    .map(|(index, step)| {
-                        view! { <RecipeStepCard index=index step=step recipe=recipe /> }
-                    })
-                    .collect::<Vec<_>>()
-            }}
-
-        </ul>
-    };
-    var_name
+    }
 }
 
 #[component]
@@ -73,7 +76,7 @@ fn RecipeStepCard(index: usize, step: String, recipe: RwSignal<CreateRecipe>) ->
     };
 
     view! {
-        <li>
+        <li class="col-span-12">
             <Card>
                 <CardHeader>
                     <h1>Step {index + 1}</h1>
@@ -99,12 +102,6 @@ fn RecipeStepCard(index: usize, step: String, recipe: RwSignal<CreateRecipe>) ->
                             appearance=ButtonAppearance::Transparent
                             icon=icondata::AiCloseOutlined
                             on:click=move |_| remove_card(index)
-                        />
-                        <Button
-                            button_type=ButtonType::Button
-                            appearance=ButtonAppearance::Transparent
-                            icon=icondata::AiEditOutlined
-                            on:click=move |_| {}
                         />
                     </CardHeaderAction>
                 </CardHeader>

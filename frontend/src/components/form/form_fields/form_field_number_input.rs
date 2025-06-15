@@ -6,7 +6,6 @@ use std::{
 use leptos::prelude::*;
 use num::Bounded;
 use thaw::*;
-use thaw_utils::class_list;
 
 #[component]
 pub fn FormFieldNumberInput<T>(
@@ -23,16 +22,14 @@ where
     T: Default + Clone + FromStr + ToString + 'static,
 {
     view! {
-        <div class=class_list![class, "col-span-12"]>
-            <Field name=name>
-                <SpinButton<T>
-                    placeholder=placeholder
-                    class="w-full"
-                    step_page=step_page
-                    value=value
-                    rules=rules
-                />
-            </Field>
-        </div>
+        <Field class=class name=name label=placeholder>
+            <SpinButton<T>
+                placeholder=placeholder
+                class="w-full"
+                step_page=step_page
+                value=value
+                rules=rules
+            />
+        </Field>
     }
 }

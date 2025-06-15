@@ -1,1 +1,16 @@
 @import "tailwindcss";
+
+/* The default style of combobox was not good to have inside a form grid */
+/* .thaw-combobox { */
+/*   display: grid; */
+/*   min-width: auto; */
+/* } */
+/**/
+/* .thaw-combobox__expand-icon { */
+/*   position: absolute; */
+/*   right: 10px; */
+/* } */
+.thaw-upload__trigger {
+  height: 100%;
+  width: 100%;
+}

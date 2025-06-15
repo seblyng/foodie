@@ -1,3 +1,4 @@
+use crate::components::form::form_fields::form_field_combobox::FormFieldSelect;
 use crate::components::form::form_fields::form_field_input::FormFieldInput;
 use crate::components::form::form_fields::form_field_number_input::FormFieldNumberInput;
 use crate::components::form::FormGroup;
@@ -30,34 +31,26 @@ pub fn RecipeIngredients() -> impl IntoView {
     );
 
     view! {
-        <div>
-            <h2 class="card-title">"Add ingredients to your recipe"</h2>
-            <FormGroup>
-                <FormFieldNumberInput<f64>
-                    name="amount"
-                    class="md:col-span-3 col-span-6"
-                    step_page=1.0
-                    placeholder="Amount"
-                    value=amount
-                />
+        <FormGroup>
+            <FormFieldNumberInput<f64>
+                name="amount"
+                class="md:col-span-3 col-span-6"
+                step_page=1.0
+                placeholder="Amount"
+                value=amount
+            />
 
-                <div class="md:col-span-3 col-span-6">
-                    <Combobox value=selected placeholder="Unit">
-                        {move || {
-                            common::recipe::Unit::iter()
-                                .map(|u| {
-                                    view! {
-                                        <ComboboxOption value=u.to_string() text=u.to_string() />
-                                    }
-                                })
-                                .collect::<Vec<_>>()
-                        }}
-                    </Combobox>
+            <FormFieldSelect class="md:col-span-3 col-span-6" value=selected placeholder="Unit">
+                {move || {
+                    common::recipe::Unit::iter()
+                        .map(|u| {
+                            view! { <option>{u.to_string()}</option> }
+                        })
+                        .collect::<Vec<_>>()
+                }}
+            </FormFieldSelect>
 
-                </div>
-                <FormFieldInput class="md:col-span-6" value=name placeholder="Name" />
-            </FormGroup>
-
+            <FormFieldInput class="col-span-12 md:col-span-6" value=name placeholder="Name" />
             <Button
                 class="col-span-12"
                 button_type=ButtonType::Button
@@ -73,28 +66,27 @@ pub fn RecipeIngredients() -> impl IntoView {
 
                 "Add to ingredient list"
             </Button>
-        </div>
+            <ul class="col-span-12">
+                // This is not so good since it rerenders the entire list on each change. However, it was a
+                // bit tricky to find a good way to do it with `<For>`, since I want to be able to remove a
+                // specific element, and the index is easy to do it. This works for now
+                {move || {
+                    let steps = recipe().ingredients;
+                    steps
+                        .into_iter()
+                        .enumerate()
+                        .map(|(index, i)| {
+                            view! {
+                                <li>
+                                    <Ingredients index=index ingredient=i recipe=recipe />
+                                </li>
+                            }
+                        })
+                        .collect::<Vec<_>>()
+                }}
 
-        <ul>
-            // This is not so good since it rerenders the entire list on each change. However, it was a
-            // bit tricky to find a good way to do it with `<For>`, since I want to be able to remove a
-            // specific element, and the index is easy to do it. This works for now
-            {move || {
-                let steps = recipe().ingredients;
-                steps
-                    .into_iter()
-                    .enumerate()
-                    .map(|(index, i)| {
-                        view! {
-                            <li>
-                                <Ingredients index=index ingredient=i recipe=recipe />
-                            </li>
-                        }
-                    })
-                    .collect::<Vec<_>>()
-            }}
-
-        </ul>
+            </ul>
+        </FormGroup>
     }
 }
 
@@ -151,12 +143,6 @@ fn Ingredients(
                         appearance=ButtonAppearance::Transparent
                         icon=icondata::AiCloseOutlined
                         on:click=move |_| remove_card(index)
-                    />
-                    <Button
-                        button_type=ButtonType::Button
-                        appearance=ButtonAppearance::Transparent
-                        icon=icondata::AiEditOutlined
-                        on:click=move |_| {}
                     />
                 </CardHeaderAction>
             </CardHeader>

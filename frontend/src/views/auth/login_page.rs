@@ -36,6 +36,7 @@ pub fn Login() -> impl IntoView {
             <Form on_submit=on_submit_foo>
                 <FormGroup>
                     <FormFieldInput
+                        class="col-span-12"
                         name="email"
                         rules=vec![InputRule::required(true.into())]
                         value=email
@@ -43,6 +44,7 @@ pub fn Login() -> impl IntoView {
                     />
 
                     <FormFieldInput
+                        class="col-span-12"
                         name="password"
                         input_type=InputType::Password
                         rules=vec![InputRule::required(true.into())]

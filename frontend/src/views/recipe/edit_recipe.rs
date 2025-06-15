@@ -4,6 +4,7 @@ use crate::views::recipe::recipe_form::recipe_ingredients::RecipeIngredients;
 use crate::views::recipe::recipe_form::recipe_steps::RecipeSteps;
 use crate::views::recipe::recipe_form::try_upload_image;
 use std::time::Duration;
+use thaw::*;
 
 use common::recipe::{CreateRecipe, Recipe};
 use leptos::prelude::*;
@@ -99,9 +100,12 @@ pub fn EditRecipe() -> impl IntoView {
                                     <RecipeIngredients />
                                     <RecipeSteps />
 
-                                    <button type="submit" class="btn btn-primary">
+                                    <Button
+                                        button_type=ButtonType::Submit
+                                        appearance=ButtonAppearance::Primary
+                                    >
                                         {"Save"}
-                                    </button>
+                                    </Button>
                                 </Form>
                             }
                                 .into_any()

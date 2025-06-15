@@ -1,4 +1,5 @@
 use crate::components::not_found::NotFound;
+use crate::views::recipe::recipe_image::RecipeImage;
 use std::time::Duration;
 use thaw::*;
 
@@ -19,14 +20,7 @@ pub fn Recipes() -> impl IntoView {
     let toast = use_toast().unwrap();
     let recipes = LocalResource::new(move || async move {
         match get("/api/recipe").send().await {
-            Ok(res) => {
-                let res = res.json::<Vec<Recipe>>().await.ok();
-                if let Some(r) = res {
-                    Some(vec![r[0].clone(), r[0].clone(), r[0].clone(), r[0].clone()])
-                } else {
-                    Some(vec![])
-                }
-            }
+            Ok(res) => res.json::<Vec<Recipe>>().await.ok(),
             Err(_) => {
                 toast.add(Toast {
                     ty: ToastType::Error,
@@ -97,7 +91,6 @@ fn RecipeCard(recipe: Recipe) -> impl IntoView {
     // TODO(seb): Should use <a> instead of use_navigate
     let navigate = use_navigate();
 
-    // TODO: Need to fix it so all images take the same height, and the text span different
     view! {
         <Card
             class="cursor-pointer"
@@ -106,10 +99,7 @@ fn RecipeCard(recipe: Recipe) -> impl IntoView {
             }
         >
             <CardPreview>
-                <img
-                    src="https://s3.bmp.ovh/imgs/2021/10/2c3b013418d55659.jpg"
-                    style="width: 100%"
-                />
+                <RecipeImage src=recipe.img />
             </CardPreview>
             <CardFooter>
                 <div class="flex flex-col w-full">

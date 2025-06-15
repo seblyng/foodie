@@ -164,10 +164,7 @@ fn RecipeCard(recipe: Recipe) -> impl IntoView {
                     </CardHeaderAction>
                 </CardHeader>
                 <CardPreview>
-                    <img
-                        src="https://s3.bmp.ovh/imgs/2021/10/2c3b013418d55659.jpg"
-                        style="width: 100%"
-                    />
+                    <RecipeImage src=recipe.img />
                 </CardPreview>
                 <CardFooter>
                     <Flex align=FlexAlign::Center>
