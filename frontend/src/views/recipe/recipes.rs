@@ -64,6 +64,20 @@ pub fn Recipes() -> impl IntoView {
                 </Transition>
 
             </div>
+
+            <Button
+                appearance=ButtonAppearance::Primary
+                icon=icondata::AiPlusOutlined
+                shape=ButtonShape::Circular
+                class="!max-w-none fixed bottom-6 right-6 w-14 h-14 transition-all duration-300 transform hover:scale-110"
+                on_click={
+                    let navigate = use_navigate();
+                    move |_| {
+                        navigate("/recipes/create", Default::default());
+                    }
+                }
+            />
+
         </div>
     }
 }

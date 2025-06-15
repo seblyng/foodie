@@ -75,7 +75,6 @@ pub fn Navbar() -> impl IntoView {
         let nav = navigate.clone();
         match key.as_str() {
             "home" => nav("/", Default::default()),
-            "recipes" => nav("/recipes", Default::default()),
             "create_recipe" => nav("/recipes/create", Default::default()),
             "friends" => nav("/friends", Default::default()),
             _ => unreachable!("Should not happen"),
@@ -91,29 +90,20 @@ pub fn Navbar() -> impl IntoView {
                 <Menu position=MenuPosition::BottomStart on_select=on_select.clone()>
                     <MenuTrigger slot>
                         <Button
-                            class="lg:!hidden"
                             appearance=ButtonAppearance::Transparent
                             icon=icondata::ChMenuHamburger
                         />
                     </MenuTrigger>
                     <MenuItem value="home">"Home"</MenuItem>
-                    <MenuItem value="recipes">"Recipes"</MenuItem>
                     <MenuItem value="create_recipe">"Create recipe"</MenuItem>
                     <MenuItem value="friends">"Friends"</MenuItem>
                 </Menu>
 
-                <a class="text-xl" href="/">
-                    "Foodie"
-                </a>
-
             </Flex>
 
-            <Flex class="lg:!flex !hidden">
-                <Link href="/">"Home"</Link>
-                <Link href="/recipes">"Recipes"</Link>
-                <Link href="/recipes/create">"Create recipes"</Link>
-                <Link href="/friends">"Friends"</Link>
-            </Flex>
+            <a class="text-xl" href="/">
+                "Foodie"
+            </a>
 
             <Flex>
                 <Profile />

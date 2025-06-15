@@ -48,10 +48,10 @@ pub fn App() -> impl IntoView {
                         <Navbar />
                         <main class="px-4 pt-20 w-full">
                             <Routes fallback=|| NotFound>
-                                <Route path=path!("/") view=public_route!(Home) />
+                                <Route path=path!("/") view=private_route!(Recipes) />
                                 <Route path=path!("/login") view=public_route!(Login) />
                                 <Route path=path!("/profile") view=private_route!(Profile) />
-                                <Route path=path!("/recipes") view=private_route!(Recipes) />
+                                <Route path=path!("/settings") view=public_route!(Home) />
                                 <Route
                                     path=path!("/recipes/create")
                                     view=private_route!(CreateRecipe)
