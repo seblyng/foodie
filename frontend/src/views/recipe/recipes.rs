@@ -19,7 +19,7 @@ use crate::{
 pub fn Recipes() -> impl IntoView {
     let toast = use_toast().unwrap();
     let recipes = LocalResource::new(move || async move {
-        match get("/api/recipe").send().await {
+        match get("/api/recipes").send().await {
             Ok(res) => res.json::<Vec<Recipe>>().await.ok(),
             Err(_) => {
                 toast.add(Toast {

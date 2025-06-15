@@ -18,7 +18,7 @@ pub fn Google() -> impl IntoView {
         });
     };
     view! {
-        <Button appearance=ButtonAppearance::Primary on:click=login>
+        <Button button_type=ButtonType::Button appearance=ButtonAppearance::Primary on:click=login>
             <img
                 class="w-6 h-6"
                 src="https://www.svgrepo.com/show/475656/google-color.svg"

@@ -9,7 +9,10 @@ use reqwest::{Client, Url};
 use sea_orm::{sea_query::OnConflict, ActiveValue::NotSet, DatabaseConnection, EntityTrait, Set};
 use serde::Deserialize;
 
-use crate::entities::{self, users};
+use crate::{
+    api::allowed_mails,
+    entities::{self, users},
+};
 
 pub type Oauth2ClientWithEndpoints =
     BasicClient<EndpointSet, EndpointNotSet, EndpointNotSet, EndpointNotSet, EndpointSet>;
@@ -90,7 +93,9 @@ impl AuthnBackend for Backend {
         let google_user = response.json::<GoogleUserResult>().await.unwrap();
 
         // TODO: Do not hardcode access to login/create user
-        if google_user.email != "sebastian@lyngjohansen.com" {
+        let allowed = allowed_mails();
+        println!("allowed: {:?}", allowed);
+        if !allowed.contains(&google_user.email) {
             return Ok(None);
         }
 

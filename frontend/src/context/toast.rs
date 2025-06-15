@@ -13,11 +13,16 @@ pub enum ToastType {
 
 #[component]
 pub fn Toaster(children: Children) -> impl IntoView {
-    let _toaster = ToasterInjection::expect_context();
-    let toaster = RwSignal::new(Toaster::new(_toaster));
-    provide_context(toaster);
-
-    view! { <>{children()}</> }
+    view! {
+        <ToasterProvider>
+            {
+                let _toaster = ToasterInjection::expect_context();
+                let toaster = RwSignal::new(Toaster::new(_toaster));
+                provide_context(toaster);
+                children()
+            }
+        </ToasterProvider>
+    }
 }
 
 #[derive(Clone)]

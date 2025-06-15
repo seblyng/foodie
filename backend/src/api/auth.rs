@@ -1,3 +1,4 @@
+use crate::api::allowed_mails;
 use crate::entities::users::Entity as UserEntity;
 use crate::{auth_backend::AuthSession, entities::users, ApiError};
 use argon2::password_hash::SaltString;
@@ -30,7 +31,8 @@ pub async fn register(
 ) -> Result<Json<User>, ApiError> {
     // TODO: Do not hardcode access to login/create user
     // Only hardcode login if not in test env
-    if !is_test_env() && create_user.email != "sebastian@lyngjohansen.com" {
+    let allowed = allowed_mails();
+    if !is_test_env() && !allowed.contains(&create_user.email) {
         return Err(ApiError::UnknownError("Not valid".to_string()));
     }
 

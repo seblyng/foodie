@@ -48,8 +48,18 @@ fn ToastTest() -> impl IntoView {
         })
     };
 
+    let theme = use_context::<RwSignal<Theme>>().unwrap();
+    let on_click = move |_| {
+        if theme().name == "dark" {
+            theme.set(Theme::light());
+        } else {
+            theme.set(Theme::dark());
+        }
+    };
+
     view! {
         <div>
+            <Button on:click=on_click>Toggle theme</Button>
             <Button on:click=error_toast>Add error toast</Button>
             <Button on:click=warning_toast>Add warning toast</Button>
             <Button on:click=success_toast>Add success toast</Button>

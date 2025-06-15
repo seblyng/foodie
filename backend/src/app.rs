@@ -5,9 +5,9 @@ use crate::{
         ingredient::{delete_ingredient, get_ingredient, get_ingredients, post_ingredient},
         oauth::{google_callback, google_login},
         recipe::{
-            delete_recipe, get_presigned_url_for_upload, get_recipe, get_recipes,
-            get_shared_recipes, post_recipe, update_recipe,
+            delete_recipe, get_recipe, get_recipes, get_shared_recipes, post_recipe, update_recipe,
         },
+        users::get_users,
     },
     auth_backend::{get_oauth_client, Backend},
     storage::{self, aws, FoodieStorage},
@@ -101,18 +101,26 @@ impl App {
                             .route("/status", post(set_friendship_status))
                             .route("/new/{id}", post(send_friend_request)),
                     )
-                    .route("/recipe", get(get_recipes).post(post_recipe))
-                    .route("/recipe/shared", get(get_shared_recipes))
-                    .route(
-                        "/recipe/{id}",
-                        get(get_recipe).delete(delete_recipe).put(update_recipe),
+                    .nest(
+                        "/recipes",
+                        Router::new()
+                            .route("/", get(get_recipes).post(post_recipe))
+                            .route("/shared", get(get_shared_recipes))
+                            .route(
+                                "/{id}",
+                                get(get_recipe).delete(delete_recipe).put(update_recipe),
+                            ),
                     )
-                    .route("/recipe/image", get(get_presigned_url_for_upload))
-                    .route("/ingredient", post(post_ingredient).get(get_ingredients))
-                    .route(
-                        "/ingredient/{id}",
-                        get(get_ingredient).delete(delete_ingredient),
+                    .nest(
+                        "/ingredients",
+                        Router::new()
+                            .route("/ingredients", post(post_ingredient).get(get_ingredients))
+                            .route(
+                                "/ingredients/{id}",
+                                get(get_ingredient).delete(delete_ingredient),
+                            ),
                     )
+                    .route("/users", get(get_users))
                     .route("/me", get(get_me))
                     .route_layer(login_required!(Backend))
                     .route("/health-check", get(|| async {}))

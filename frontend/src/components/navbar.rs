@@ -84,8 +84,8 @@ pub fn Navbar() -> impl IntoView {
 
     view! {
         <LayoutHeader
-            class="flex align-center justify-between"
-            attr:style="background-color: #525252; padding: 20px;"
+            class="flex align-center justify-between top-0 fixed w-full z-1000 p-4"
+            attr:style="background-color: var(--colorNeutralStroke1);"
         >
             <Flex>
                 <Menu position=MenuPosition::BottomStart on_select=on_select.clone()>

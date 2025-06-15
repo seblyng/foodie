@@ -24,7 +24,7 @@ pub fn Recipe() -> impl IntoView {
     let id = move || params.with(|params| params.get("id").unwrap_or_default());
 
     let recipe = LocalResource::new(move || async move {
-        get(&format!("/api/recipe/{}", id()))
+        get(&format!("/api/recipes/{}", id()))
             .send()
             .await
             .ok()?
@@ -105,7 +105,7 @@ fn RecipeCard(recipe: Recipe) -> impl IntoView {
     let on_delete = move |_| {
         let nav = navigate.clone();
         spawn_local(async move {
-            match delete(&format!("/api/recipe/{}", recipe.id)).send().await {
+            match delete(&format!("/api/recipes/{}", recipe.id)).send().await {
                 Ok(r) if r.ok() => {
                     toast.add(Toast {
                         ty: ToastType::Success,

@@ -113,7 +113,7 @@ async fn get_toast_recipe() -> Result<CreateRecipe, anyhow::Error> {
 async fn test_create_recipe(pool: PgPool) -> Result<(), anyhow::Error> {
     let app = TestApp::new(pool.clone()).await?;
     let pizza_recipe = get_pizza_recipe().await?;
-    let response = app.post("api/recipe", Some(&pizza_recipe)).await?;
+    let response = app.post("api/recipes", Some(&pizza_recipe)).await?;
 
     assert_eq!(response.status(), StatusCode::OK);
 
@@ -134,11 +134,11 @@ async fn test_create_recipe(pool: PgPool) -> Result<(), anyhow::Error> {
 async fn test_delete_recipe(pool: PgPool) -> Result<(), anyhow::Error> {
     let app = TestApp::new(pool.clone()).await?;
     let pizza_recipe = get_pizza_recipe().await?;
-    let response = app.post("api/recipe", Some(&pizza_recipe)).await?;
+    let response = app.post("api/recipes", Some(&pizza_recipe)).await?;
     let recipe = response.json::<Recipe>().await?;
     let recipe_id = recipe.id;
 
-    app.delete(format!("api/recipe/{}", recipe_id)).await?;
+    app.delete(format!("api/recipes/{}", recipe_id)).await?;
 
     let recipe = recipes::Entity::find_by_id(recipe_id)
         .one(&app.pool)
@@ -159,11 +159,11 @@ async fn test_delete_recipe(pool: PgPool) -> Result<(), anyhow::Error> {
 async fn test_get_recipe_by_id(pool: PgPool) -> Result<(), anyhow::Error> {
     let app = TestApp::new(pool.clone()).await?;
     let pizza_recipe = get_pizza_recipe().await?;
-    let response = app.post("api/recipe", Some(&pizza_recipe)).await?;
+    let response = app.post("api/recipes", Some(&pizza_recipe)).await?;
     let recipe = response.json::<Recipe>().await?;
     let recipe_id = recipe.id;
 
-    let res = app.get(format!("api/recipe/{}", recipe_id)).await?;
+    let res = app.get(format!("api/recipes/{}", recipe_id)).await?;
 
     let recipe = res.json::<Recipe>().await?;
 
@@ -197,11 +197,11 @@ async fn test_get_all_recipes(pool: PgPool) -> Result<(), anyhow::Error> {
     let pizza_recipe = get_pizza_recipe().await?;
     let pancake_recipe = get_pancake_recipe().await?;
     let toast_recipe = get_toast_recipe().await?;
-    app.post("api/recipe", Some(&pizza_recipe)).await?;
-    app.post("api/recipe", Some(&pancake_recipe)).await?;
-    app.post("api/recipe", Some(&toast_recipe)).await?;
+    app.post("api/recipes", Some(&pizza_recipe)).await?;
+    app.post("api/recipes", Some(&pancake_recipe)).await?;
+    app.post("api/recipes", Some(&toast_recipe)).await?;
 
-    let res = app.get("api/recipe").await?;
+    let res = app.get("api/recipes").await?;
     let recipes = res.json::<Vec<Recipe>>().await?;
 
     let get_ingredients = |i: usize| {
@@ -253,7 +253,7 @@ async fn test_update_recipe(pool: PgPool) -> Result<(), anyhow::Error> {
     let pizza_recipe = get_pizza_recipe().await?;
 
     let recipe = app
-        .post("api/recipe", Some(&pizza_recipe))
+        .post("api/recipes", Some(&pizza_recipe))
         .await?
         .json::<Recipe>()
         .await?;
@@ -262,7 +262,7 @@ async fn test_update_recipe(pool: PgPool) -> Result<(), anyhow::Error> {
     let toast_recipe = get_toast_recipe().await?;
 
     let updated_recipe = app
-        .put(format!("api/recipe/{recipe_id}"), &toast_recipe)
+        .put(format!("api/recipes/{recipe_id}"), &toast_recipe)
         .await
         .unwrap();
     let updated_recipe = updated_recipe.json::<Recipe>().await?;
@@ -339,9 +339,9 @@ async fn test_get_shared_recipes(pool: PgPool) -> Result<(), anyhow::Error> {
     .exec(&app.pool)
     .await?;
 
-    app.post("api/recipe", Some(&pizza_recipe)).await?;
-    app.post("api/recipe", Some(&pancake_recipe)).await?;
-    app.post("api/recipe", Some(&toast_recipe)).await?;
+    app.post("api/recipes", Some(&pizza_recipe)).await?;
+    app.post("api/recipes", Some(&pancake_recipe)).await?;
+    app.post("api/recipes", Some(&toast_recipe)).await?;
 
     app.login(&UserLogin {
         email: "bar@bar.com".to_string(),
@@ -349,7 +349,7 @@ async fn test_get_shared_recipes(pool: PgPool) -> Result<(), anyhow::Error> {
     })
     .await;
 
-    let res = app.get("api/recipe/shared").await?;
+    let res = app.get("api/recipes/shared").await?;
     let recipes = res.json::<Vec<Recipe>>().await?;
 
     let get_ingredients = |i: usize| {

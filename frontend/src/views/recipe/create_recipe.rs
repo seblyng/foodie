@@ -47,7 +47,7 @@ pub fn CreateRecipe() -> impl IntoView {
             }
 
             let body = serde_json::to_value(create_recipe).unwrap();
-            let res = post("/api/recipe").body(body.to_string()).send().await;
+            let res = post("/api/recipes").body(body.to_string()).send().await;
 
             match res {
                 Ok(r) if r.ok() => {

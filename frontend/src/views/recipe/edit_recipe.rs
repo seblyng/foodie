@@ -29,7 +29,7 @@ pub fn EditRecipe() -> impl IntoView {
     let (current_file, set_current_file) = signal::<Option<String>>(None);
 
     let recipe = LocalResource::new(move || async move {
-        let r = get(&format!("/api/recipe/{}", id()))
+        let r = get(&format!("/api/recipes/{}", id()))
             .send()
             .await
             .ok()?
@@ -62,7 +62,7 @@ pub fn EditRecipe() -> impl IntoView {
             }
 
             let body = serde_json::to_value(submit_data).unwrap();
-            let res = put(&format!("/api/recipe/{_id}"))
+            let res = put(&format!("/api/recipes/{_id}"))
                 .body(body.to_string())
                 .send()
                 .await;
