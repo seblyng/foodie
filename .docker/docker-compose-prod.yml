@@ -44,6 +44,7 @@ services:
       - AWS_URL=https://foodie.lyngjohansen.com
       - AWS_USER=$AWS_USER
       - AWS_PASSWORD=$AWS_PASSWORD
+      - ALLOWED_MAILS=$ALLOWED_MAILS
 
   postgres:
     networks:

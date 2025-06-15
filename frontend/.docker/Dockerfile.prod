@@ -32,7 +32,7 @@ COPY frontend/src ./src
 ENV RUSTFLAGS='--cfg getrandom_backend="wasm_js"'
 
 # TODO: For some reason, --release breaks things
-RUN trunk build
+RUN trunk build --release
 
 FROM caddy:2.8
 COPY --from=chef /app/dist /srv
