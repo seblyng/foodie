@@ -55,7 +55,7 @@ impl ToasterTrait for RwSignal<Toaster> {
             opts = opts.with_timeout(duration);
         }
 
-        self.get().inj.dispatch_toast(
+        self.get_untracked().inj.dispatch_toast(
             move || {
                 view! {
                     <Toast>
