@@ -1,29 +1,16 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
 
-/* TODO: Need to fix the after:content if placeholder is not provided */
-.floating-label {
-  @apply label absolute left-3 transition-all
-  text-base-content text-opacity-50
-  -top-1 peer-focus:-top-1 peer-placeholder-shown:top-1.5
-  after:content-[':'] peer-focus:after:content-[':'] peer-placeholder-shown:after:content-['']
-  text-xs peer-focus:text-xs peer-placeholder-shown:text-sm cursor-text;
-}
-
-.floating-label-input {
-  @apply input input-bordered placeholder-transparent pt-4;
-}
-
-.floating-label-textarea {
-  @apply textarea textarea-bordered placeholder-transparent pt-4;
-}
-
-/* TODO: Fix it for all others */
-.input {
-  @apply focus:outline-none focus:border-gray-500 hover:border-gray-500;
-}
-
-.h-navbar-screen {
-  @apply h-[calc(100vh-9.25rem)];
+/* The default style of combobox was not good to have inside a form grid */
+/* .thaw-combobox { */
+/*   display: grid; */
+/*   min-width: auto; */
+/* } */
+/**/
+/* .thaw-combobox__expand-icon { */
+/*   position: absolute; */
+/*   right: 10px; */
+/* } */
+.thaw-upload__trigger {
+  height: 100%;
+  width: 100%;
 }

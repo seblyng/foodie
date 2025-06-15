@@ -1,111 +1,92 @@
-use crate::components::form::form_fields::{
-    form_field_input::FormFieldInputType, form_field_select::FormFieldSelect,
-};
+use crate::components::form::form_fields::form_field_combobox::FormFieldSelect;
+use crate::components::form::form_fields::form_field_input::FormFieldInput;
+use crate::components::form::form_fields::form_field_number_input::FormFieldNumberInput;
 use crate::components::form::FormGroup;
-use crate::components::icons::chevron_down::ChevronDown;
-use crate::components::icons::chevron_up::ChevronUp;
-use crate::components::icons::close_icon::CloseIcon;
-use crate::components::icons::modify_icon::ModifyIcon;
-use common::recipe::{CreateRecipe, CreateRecipeIngredient};
+use common::recipe::{CreateRecipe, CreateRecipeIngredient, Unit};
 use common::strum::IntoEnumIterator;
 use leptos::prelude::*;
 use rust_decimal::Decimal;
-
-use crate::components::{
-    dropdown::DropDownItem, form::form_fields::form_field_input::FormFieldInput,
-};
+use thaw::*;
 
 #[component]
 pub fn RecipeIngredients() -> impl IntoView {
-    let recipe = use_context::<RwSignal<CreateRecipe, LocalStorage>>().unwrap();
+    let recipe = use_context::<RwSignal<CreateRecipe>>().unwrap();
 
     let recipe_ingredient = RwSignal::new(CreateRecipeIngredient::default());
 
-    let units = common::recipe::Unit::iter()
-        .map(|u| DropDownItem {
-            key: u.to_string(),
-            label: u.to_string(),
-            value: u,
-        })
-        .collect::<Vec<_>>();
+    let name = slice!(recipe_ingredient.name);
+    let amount = RwSignal::new(0.0);
 
-    // TODO: I want to migrate all this css stuff out to a/some component(s).
-    // I want it to just set to 12 cols by default on the outer div.
-    // Then I want to add a component that can take the `span` as an optional prop. This should
-    // definetely be the case for the `FormField{}`-components, but I need to think of a way to do
-    // it with these that are not a separate component.
+    Effect::new(move || {
+        let a = amount();
+        recipe_ingredient.update(|ri| {
+            ri.amount = Decimal::from_f64_retain(a);
+        });
+    });
+
+    let selected = create_slice(
+        recipe_ingredient,
+        |ri| ri.unit.map(|u| u.to_string()).unwrap_or_default(),
+        |ri, n: String| ri.unit = n.parse::<Unit>().ok(),
+    );
 
     view! {
-        <div class="card w-full bg-neutral">
-            <div class="card-body">
-                <h2 class="card-title">"Add ingredients to your recipe"</h2>
-                <FormGroup>
-                    <FormFieldInput
-                        value=move || {
-                            recipe_ingredient().amount.map(|a| a.to_string()).unwrap_or_default()
-                        }
+        <FormGroup>
+            <FormFieldNumberInput<f64>
+                name="amount"
+                class="md:col-span-3 col-span-6"
+                step_page=1.0
+                placeholder="Amount"
+                value=amount
+            />
 
-                        span="col-span-6 md:col-span-3"
-                        ty=FormFieldInputType::Number
-                        placeholder="Amount"
-                        on_input=move |amount| {
-                            recipe_ingredient
-                                .update(|ri| ri.amount = amount.parse::<Decimal>().ok())
-                        }
-                    />
-
-                    <FormFieldSelect
-                        value=Signal::derive(move || {
-                            recipe_ingredient().unit.map(|u| u.to_string()).unwrap_or_default()
+            <FormFieldSelect class="md:col-span-3 col-span-6" value=selected placeholder="Unit">
+                {move || {
+                    common::recipe::Unit::iter()
+                        .map(|u| {
+                            view! { <option>{u.to_string()}</option> }
                         })
+                        .collect::<Vec<_>>()
+                }}
+            </FormFieldSelect>
 
-                        span="col-span-6 md:col-span-3"
-                        items=units
-                        placeholder="Unit"
-                        on_change=move |unit| recipe_ingredient.update(|ri| ri.unit = unit)
-                    />
+            <FormFieldInput class="col-span-12 md:col-span-6" value=name placeholder="Name" />
+            <Button
+                class="col-span-12"
+                button_type=ButtonType::Button
+                on:click=move |_| {
+                    recipe
+                        .update(|r| {
+                            r.ingredients.push(recipe_ingredient.get_untracked());
+                            recipe_ingredient.set(CreateRecipeIngredient::default());
+                            amount.set(0.0);
+                        })
+                }
+            >
 
-                    <FormFieldInput
-                        value=move || recipe_ingredient().name
-                        span="md:col-span-6"
-                        ty=FormFieldInputType::Text
-                        placeholder="Name"
-                        on_input=move |name| recipe_ingredient.update(|ri| ri.name = name)
-                    />
-                </FormGroup>
-                <button
-                    on:click=move |_| {
-                        recipe
-                            .update(|r| {
-                                r.ingredients.push(recipe_ingredient.get_untracked());
-                                recipe_ingredient.set(CreateRecipeIngredient::default());
-                            })
-                    }
+                "Add to ingredient list"
+            </Button>
+            <ul class="col-span-12">
+                // This is not so good since it rerenders the entire list on each change. However, it was a
+                // bit tricky to find a good way to do it with `<For>`, since I want to be able to remove a
+                // specific element, and the index is easy to do it. This works for now
+                {move || {
+                    let steps = recipe().ingredients;
+                    steps
+                        .into_iter()
+                        .enumerate()
+                        .map(|(index, i)| {
+                            view! {
+                                <li>
+                                    <Ingredients index=index ingredient=i recipe=recipe />
+                                </li>
+                            }
+                        })
+                        .collect::<Vec<_>>()
+                }}
 
-                    type="button"
-                    class="btn btn-primary"
-                >
-                    "Add to ingredient list"
-                </button>
-            </div>
-        </div>
-
-        <ul>
-            // This is not so good since it rerenders the entire list on each change. However, it was a
-            // bit tricky to find a good way to do it with `<For>`, since I want to be able to remove a
-            // specific element, and the index is easy to do it. This works for now
-            {move || {
-                let steps = recipe().ingredients;
-                steps
-                    .into_iter()
-                    .enumerate()
-                    .map(|(index, i)| {
-                        view! { <Ingredients index=index ingredient=i recipe=recipe/> }
-                    })
-                    .collect::<Vec<_>>()
-            }}
-
-        </ul>
+            </ul>
+        </FormGroup>
     }
 }
 
@@ -113,7 +94,7 @@ pub fn RecipeIngredients() -> impl IntoView {
 fn Ingredients(
     index: usize,
     ingredient: CreateRecipeIngredient,
-    recipe: RwSignal<CreateRecipe, LocalStorage>,
+    recipe: RwSignal<CreateRecipe>,
 ) -> impl IntoView {
     let num_steps = move || recipe().ingredients.len();
     let remove_card = move |index: usize| {
@@ -129,59 +110,42 @@ fn Ingredients(
     };
 
     view! {
-        <li>
-            <div class="card w-full bg-neutral">
-                <div class="card-body">
-                    <div class="card-actions flex justify-between">
-                        <div>
-                            <h2 class="card-title">
-                                {format!(
-                                    "{} {} {}",
-                                    ingredient.amount.map(|a| a.to_string()).unwrap_or_default(),
-                                    ingredient.unit.map(|i| i.to_string()).unwrap_or_default(),
-                                    ingredient.name,
-                                )}
+        <Card>
+            <CardHeader>
+                <h2 class="card-title">
+                    {format!(
+                        "{} {} {}",
+                        ingredient.amount.map(|a| a.to_string()).unwrap_or_default(),
+                        ingredient.unit.map(|i| i.to_string()).unwrap_or_default(),
+                        ingredient.name,
+                    )}
 
-                            </h2>
-                        </div>
-                        <div>
-                            <Show when=move || { index > 0 }>
-                                <button
-                                    type="button"
-                                    on:click=move |_| swap_card(index, index - 1)
-                                    class="btn btn-square btn-sm bg-neutral"
-                                >
-                                    <ChevronUp/>
-                                </button>
-                            </Show>
-                            <Show when=move || { index < num_steps() - 1 }>
-                                <button
-                                    type="button"
-                                    on:click=move |_| swap_card(index, index + 1)
-                                    class="btn btn-square btn-sm bg-neutral"
-                                >
-                                    <ChevronDown/>
-                                </button>
-                            </Show>
-
-                            <button
-                                type="button"
-                                on:click=move |_| remove_card(index)
-                                class="btn btn-square btn-sm bg-neutral"
-                            >
-                                <CloseIcon/>
-                            </button>
-                            <button
-                                type="button"
-                                on:click=move |_| {}
-                                class="btn btn-square btn-sm bg-neutral"
-                            >
-                                <ModifyIcon/>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </li>
+                </h2>
+                <CardHeaderAction slot>
+                    <Show when=move || { index > 0 }>
+                        <Button
+                            button_type=ButtonType::Button
+                            appearance=ButtonAppearance::Transparent
+                            icon=icondata::BiChevronUpRegular
+                            on:click=move |_| swap_card(index, index - 1)
+                        />
+                    </Show>
+                    <Show when=move || { index < num_steps() - 1 }>
+                        <Button
+                            button_type=ButtonType::Button
+                            appearance=ButtonAppearance::Transparent
+                            icon=icondata::BiChevronDownRegular
+                            on:click=move |_| swap_card(index, index + 1)
+                        />
+                    </Show>
+                    <Button
+                        button_type=ButtonType::Button
+                        appearance=ButtonAppearance::Transparent
+                        icon=icondata::AiCloseOutlined
+                        on:click=move |_| remove_card(index)
+                    />
+                </CardHeaderAction>
+            </CardHeader>
+        </Card>
     }
 }

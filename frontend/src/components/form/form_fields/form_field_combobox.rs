@@ -2,16 +2,19 @@ use leptos::prelude::*;
 use thaw::*;
 
 #[component]
-pub fn FormFieldTextarea(
+pub fn FormFieldSelect(
     #[prop(optional, into)] class: MaybeProp<String>,
     #[prop(optional, into)] name: MaybeProp<String>,
     #[prop(optional, into)] value: thaw_utils::Model<String>,
     #[prop(optional, into)] placeholder: MaybeProp<String>,
-    #[prop(optional, into)] rules: Vec<TextareaRule>,
+    #[prop(optional, into)] rules: Vec<SelectRule>,
+    children: Children,
 ) -> impl IntoView {
     view! {
         <Field class=class name=name label=placeholder>
-            <Textarea rules=rules value=value placeholder=placeholder class="w-full" />
+            <Select value=value rules=rules>
+                {children()}
+            </Select>
         </Field>
     }
 }

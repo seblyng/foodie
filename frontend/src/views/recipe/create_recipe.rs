@@ -1,5 +1,5 @@
 use crate::{
-    components::stepper::{Step, Stepper},
+    components::form::Form,
     views::recipe::recipe_form::{
         recipe_info::RecipeInfo, recipe_ingredients::RecipeIngredients, recipe_steps::RecipeSteps,
         try_upload_image,
@@ -8,6 +8,7 @@ use crate::{
 use leptos::{prelude::*, task::spawn_local};
 use leptos_router::{hooks::use_navigate, NavigateOptions};
 use std::time::Duration;
+use thaw::*;
 use web_sys::File;
 
 use crate::{
@@ -15,20 +16,22 @@ use crate::{
     request::post,
 };
 
-use common::recipe::{CreateRecipe, Recipe};
-
-use crate::components::form::Form;
+use common::recipe::Recipe;
 
 #[component]
 pub fn CreateRecipe() -> impl IntoView {
-    let recipe = RwSignal::new_with_storage(common::recipe::CreateRecipe::default());
+    let recipe = RwSignal::new(common::recipe::CreateRecipe::default());
+
+    provide_context(recipe);
+
     let toast = use_toast().unwrap();
 
     let file = signal_local::<Option<File>>(None);
 
     let navigate = use_navigate();
 
-    let on_submit = move |mut create_recipe: CreateRecipe| {
+    let on_submit = move |_| {
+        let mut create_recipe = recipe.get();
         let nav = navigate.clone();
         spawn_local(async move {
             match try_upload_image(file.0.get_untracked()).await {
@@ -77,20 +80,14 @@ pub fn CreateRecipe() -> impl IntoView {
     let (current_file, _) = signal::<Option<String>>(None);
 
     view! {
-        <Form values=recipe on_submit=on_submit>
-            <Stepper>
-                <Step
-                    label="Basics"
-                    child=move || view! { <RecipeInfo file=file current_file=current_file/> }
-                />
-                <Step label="Ingredients" child=move || view! { <RecipeIngredients/> }/>
-                <Step label="Steps" child=move || view! { <RecipeSteps/> }/>
-            </Stepper>
+        <Form on_submit=on_submit>
+            <RecipeInfo file=file current_file=current_file />
+            <RecipeIngredients />
+            <RecipeSteps />
 
-            // TODO: Have the save button on the final page
-            <button type="submit" class="btn btn-primary">
+            <Button appearance=ButtonAppearance::Primary button_type=ButtonType::Submit>
                 {"Save"}
-            </button>
+            </Button>
         </Form>
     }
 }

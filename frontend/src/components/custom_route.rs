@@ -42,10 +42,10 @@ pub fn PrivateRoute(children: ChildrenFn) -> impl IntoView {
                     if auth {
                         children().into_any()
                     } else {
-                        view! { <Redirect path="/login"/> }.into_any()
+                        view! { <Redirect path="/login" /> }.into_any()
                     }
                 }
-                None => view! { <Loading/> }.into_any(),
+                None => view! { <Loading /> }.into_any(),
             }
         }}
     }
@@ -62,14 +62,14 @@ pub fn PublicRoute(children: ChildrenFn) -> impl IntoView {
                 Some(auth) => {
                     if auth {
                         if location.pathname.get() == "/login" {
-                            return view! { <Redirect path="/"/> }.into_any();
+                            return view! { <Redirect path="/" /> }.into_any();
                         }
                         children().into_any()
                     } else {
                         children().into_any()
                     }
                 }
-                None => view! { <Loading/> }.into_any(),
+                None => view! { <Loading /> }.into_any(),
             }
         }}
     }
