@@ -5,7 +5,7 @@ use crate::{
         try_upload_image,
     },
 };
-use leptos::{logging::log, prelude::*, task::spawn_local};
+use leptos::{prelude::*, task::spawn_local};
 use leptos_router::{hooks::use_navigate, NavigateOptions};
 use std::time::Duration;
 use thaw::*;
@@ -29,11 +29,6 @@ pub fn CreateRecipe() -> impl IntoView {
     let file = signal_local::<Option<File>>(None);
 
     let navigate = use_navigate();
-
-    let on_click = move |_| {
-        let rec = recipe.get();
-        log!("{:#?}", &rec);
-    };
 
     let on_submit = move |_| {
         let mut create_recipe = recipe.get();
@@ -89,10 +84,6 @@ pub fn CreateRecipe() -> impl IntoView {
             <RecipeInfo file=file current_file=current_file />
             <RecipeIngredients />
             <RecipeSteps />
-
-            <Button on:click=on_click appearance=ButtonAppearance::Primary>
-                {"Check"}
-            </Button>
 
             <Button appearance=ButtonAppearance::Primary button_type=ButtonType::Submit>
                 {"Save"}
