@@ -45,9 +45,7 @@ pub fn RecipeInfo(
                     rules=vec![InputRule::required(true.into())]
                 />
 
-                <FormFieldNumberInput<
-                i32,
-            >
+                <FormFieldNumberInput<i32>
                     name="servings"
                     step_page=1
                     placeholder="Servings"
@@ -104,9 +102,7 @@ fn RecipeDuration(recipe: RwSignal<CreateRecipe>) -> impl IntoView {
     });
 
     view! {
-        <FormFieldNumberInput<
-        u32,
-    >
+        <FormFieldNumberInput<u32>
             name="baking_time"
             step_page=1
             placeholder="Baking time minutes"
@@ -126,9 +122,7 @@ fn RecipeDuration(recipe: RwSignal<CreateRecipe>) -> impl IntoView {
             ]
         />
 
-        <FormFieldNumberInput<
-        u32,
-    >
+        <FormFieldNumberInput<u32>
             name="prep_time"
             step_page=1
             placeholder="Prep time minutes"

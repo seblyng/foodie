@@ -6,9 +6,11 @@ use std::{
 use leptos::prelude::*;
 use num::Bounded;
 use thaw::*;
+use thaw_utils::class_list;
 
 #[component]
 pub fn FormFieldNumberInput<T>(
+    #[prop(optional, into)] class: MaybeProp<String>,
     #[prop(optional, into)] name: MaybeProp<String>,
     #[prop(optional, into)] value: thaw_utils::Model<T>,
     #[prop(optional, into)] placeholder: MaybeProp<String>,
@@ -21,11 +23,15 @@ where
     T: Default + Clone + FromStr + ToString + 'static,
 {
     view! {
-        <div class="col-span-12">
+        <div class=class_list![class, "col-span-12"]>
             <Field name=name>
-                <SpinButton<
-                T,
-            > placeholder=placeholder class="w-full" step_page=step_page value=value rules=rules />
+                <SpinButton<T>
+                    placeholder=placeholder
+                    class="w-full"
+                    step_page=step_page
+                    value=value
+                    rules=rules
+                />
             </Field>
         </div>
     }

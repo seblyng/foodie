@@ -26,7 +26,6 @@ where
                 >
 
                     {children()}
-                    <input type="reset" />
                 </form>
             </FieldContextProvider>
         </div>

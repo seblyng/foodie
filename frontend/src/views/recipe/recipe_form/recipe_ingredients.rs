@@ -1,3 +1,4 @@
+use crate::components::form::form_fields::form_field_input::FormFieldInput;
 use crate::components::form::form_fields::form_field_number_input::FormFieldNumberInput;
 use crate::components::form::FormGroup;
 use common::recipe::{CreateRecipe, CreateRecipeIngredient, Unit};
@@ -12,20 +13,6 @@ pub fn RecipeIngredients() -> impl IntoView {
 
     let recipe_ingredient = RwSignal::new(CreateRecipeIngredient::default());
 
-    let _units = move || {
-        common::recipe::Unit::iter()
-            .map(|u| {
-                view! { <ComboboxOption value=u.to_string() text=u.to_string() /> }
-            })
-            .collect::<Vec<_>>()
-    };
-
-    // TODO: I want to migrate all this css stuff out to a/some component(s).
-    // I want it to just set to 12 cols by default on the outer div.
-    // Then I want to add a component that can take the `span` as an optional prop. This should
-    // definetely be the case for the `FormField{}`-components, but I need to think of a way to do
-    // it with these that are not a separate component.
-    // let amount = slice!(recipe.amount);
     let name = slice!(recipe_ingredient.name);
     let amount = RwSignal::new(0.0);
 
@@ -46,15 +33,29 @@ pub fn RecipeIngredients() -> impl IntoView {
         <div>
             <h2 class="card-title">"Add ingredients to your recipe"</h2>
             <FormGroup>
-                <FormFieldNumberInput<
-                f64,
-            > name="amount" step_page=1.0 placeholder="Amount" value=amount />
+                <FormFieldNumberInput<f64>
+                    name="amount"
+                    class="md:col-span-3 col-span-6"
+                    step_page=1.0
+                    placeholder="Amount"
+                    value=amount
+                />
 
-                <Combobox class="col-span-6 md:col-span-3" value=selected placeholder="Unit">
-                    {_units}
-                </Combobox>
+                <div class="md:col-span-3 col-span-6">
+                    <Combobox value=selected placeholder="Unit">
+                        {move || {
+                            common::recipe::Unit::iter()
+                                .map(|u| {
+                                    view! {
+                                        <ComboboxOption value=u.to_string() text=u.to_string() />
+                                    }
+                                })
+                                .collect::<Vec<_>>()
+                        }}
+                    </Combobox>
 
-                <Input class="md:col-span-6" value=name placeholder="Name" />
+                </div>
+                <FormFieldInput class="md:col-span-6" value=name placeholder="Name" />
             </FormGroup>
 
             <Button
@@ -65,6 +66,7 @@ pub fn RecipeIngredients() -> impl IntoView {
                         .update(|r| {
                             r.ingredients.push(recipe_ingredient.get_untracked());
                             recipe_ingredient.set(CreateRecipeIngredient::default());
+                            amount.set(0.0);
                         })
                 }
             >
@@ -83,7 +85,11 @@ pub fn RecipeIngredients() -> impl IntoView {
                     .into_iter()
                     .enumerate()
                     .map(|(index, i)| {
-                        view! { <Ingredients index=index ingredient=i recipe=recipe /> }
+                        view! {
+                            <li>
+                                <Ingredients index=index ingredient=i recipe=recipe />
+                            </li>
+                        }
                     })
                     .collect::<Vec<_>>()
             }}
@@ -112,50 +118,48 @@ fn Ingredients(
     };
 
     view! {
-        <li>
-            <Card>
-                <CardHeader>
-                    <h2 class="card-title">
-                        {format!(
-                            "{} {} {}",
-                            ingredient.amount.map(|a| a.to_string()).unwrap_or_default(),
-                            ingredient.unit.map(|i| i.to_string()).unwrap_or_default(),
-                            ingredient.name,
-                        )}
+        <Card>
+            <CardHeader>
+                <h2 class="card-title">
+                    {format!(
+                        "{} {} {}",
+                        ingredient.amount.map(|a| a.to_string()).unwrap_or_default(),
+                        ingredient.unit.map(|i| i.to_string()).unwrap_or_default(),
+                        ingredient.name,
+                    )}
 
-                    </h2>
-                    <CardHeaderAction slot>
-                        <Show when=move || { index > 0 }>
-                            <Button
-                                button_type=ButtonType::Button
-                                appearance=ButtonAppearance::Transparent
-                                icon=icondata::BiChevronUpRegular
-                                on:click=move |_| swap_card(index, index - 1)
-                            />
-                        </Show>
-                        <Show when=move || { index < num_steps() - 1 }>
-                            <Button
-                                button_type=ButtonType::Button
-                                appearance=ButtonAppearance::Transparent
-                                icon=icondata::BiChevronDownRegular
-                                on:click=move |_| swap_card(index, index + 1)
-                            />
-                        </Show>
+                </h2>
+                <CardHeaderAction slot>
+                    <Show when=move || { index > 0 }>
                         <Button
                             button_type=ButtonType::Button
                             appearance=ButtonAppearance::Transparent
-                            icon=icondata::AiCloseOutlined
-                            on:click=move |_| remove_card(index)
+                            icon=icondata::BiChevronUpRegular
+                            on:click=move |_| swap_card(index, index - 1)
                         />
+                    </Show>
+                    <Show when=move || { index < num_steps() - 1 }>
                         <Button
                             button_type=ButtonType::Button
                             appearance=ButtonAppearance::Transparent
-                            icon=icondata::AiEditOutlined
-                            on:click=move |_| {}
+                            icon=icondata::BiChevronDownRegular
+                            on:click=move |_| swap_card(index, index + 1)
                         />
-                    </CardHeaderAction>
-                </CardHeader>
-            </Card>
-        </li>
+                    </Show>
+                    <Button
+                        button_type=ButtonType::Button
+                        appearance=ButtonAppearance::Transparent
+                        icon=icondata::AiCloseOutlined
+                        on:click=move |_| remove_card(index)
+                    />
+                    <Button
+                        button_type=ButtonType::Button
+                        appearance=ButtonAppearance::Transparent
+                        icon=icondata::AiEditOutlined
+                        on:click=move |_| {}
+                    />
+                </CardHeaderAction>
+            </CardHeader>
+        </Card>
     }
 }
