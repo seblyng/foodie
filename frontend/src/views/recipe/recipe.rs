@@ -19,7 +19,7 @@ use rust_decimal::Decimal;
 use crate::request::{delete, get};
 
 #[component]
-pub fn Recipe() -> impl IntoView {
+pub fn RecipePage() -> impl IntoView {
     let params = use_params_map();
     let id = move || params.with(|params| params.get("id").unwrap_or_default());
 
@@ -41,32 +41,38 @@ pub fn Recipe() -> impl IntoView {
                 _recipe()
                     .map(|data| match data {
                         None => NotFound.into_any(),
-                        Some(r) => {
-                            view! {
-                                <div class="flex justify-center w-full">
-                                    <div class="flex flex-col max-w-[1408px]">
-                                        <RecipeCard recipe=r.clone() />
-                                        <div class="flex flex-wrap gap-x-12 justify-center mt-8">
-                                            <RecipeIngredients
-                                                recipe=r.clone()
-                                                ingredients=r.ingredients
-                                            />
-                                            {if let Some(steps) = r.instructions {
-                                                view! { <RecipeSteps steps=steps /> }.into_any()
-                                            } else {
-                                                ().into_any()
-                                            }}
-
-                                        </div>
-                                    </div>
-                                </div>
-                            }
-                                .into_any()
-                        }
+                        Some(r) => view! { <Recipe recipe=r /> }.into_any(),
                     })
             }}
 
         </Transition>
+    }
+}
+
+#[component]
+fn Recipe(recipe: Recipe) -> impl IntoView {
+    view! {
+        <div class="mx-auto w-[80%] max-w-screen-xl">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <div class="lg:col-span-2 order-1 lg:order-2">
+                    <div class="flex flex-col gap-8">
+                        <RecipeCard recipe=recipe.clone() />
+                        {if let Some(ref steps) = recipe.instructions {
+                            view! { <RecipeSteps steps=steps.clone() /> }.into_any()
+                        } else {
+                            ().into_any()
+                        }}
+                    </div>
+                </div>
+
+                <div class="lg:col-span-1 order-2 lg:order-1">
+                    <RecipeIngredients
+                        recipe=recipe.clone()
+                        ingredients=recipe.ingredients.clone()
+                    />
+                </div>
+            </div>
+        </div>
     }
 }
 
@@ -126,58 +132,53 @@ fn RecipeCard(recipe: Recipe) -> impl IntoView {
     };
 
     view! {
-        <div class="flex w-full justify-center">
-            <Card>
-                <CardHeader>
-                    <Body1>{recipe.name}</Body1>
-                    <CardHeaderAction slot>
-                        <Menu position=MenuPosition::BottomStart on_select=on_select>
-                            <MenuTrigger slot>
-                                <Button
-                                    appearance=ButtonAppearance::Transparent
-                                    icon=icondata::AiMoreOutlined
-                                />
-                            </MenuTrigger>
-                            <MenuItem value="edit">"Edit"</MenuItem>
-                            <MenuItem value="delete">"Delete"</MenuItem>
-                        </Menu>
+        <Card>
+            <CardHeader>
+                <Body1>{recipe.name}</Body1>
+                <CardHeaderAction slot>
+                    <Menu position=MenuPosition::BottomEnd on_select=on_select>
+                        <MenuTrigger slot>
+                            <Button
+                                appearance=ButtonAppearance::Transparent
+                                icon=icondata::AiMoreOutlined
+                            />
+                        </MenuTrigger>
+                        <MenuItem value="edit">"Edit"</MenuItem>
+                        <MenuItem value="delete">"Delete"</MenuItem>
+                    </Menu>
 
-                        <Dialog open>
-                            <DialogSurface>
-                                <DialogBody>
-                                    <DialogTitle>"Delete recipe"</DialogTitle>
-                                    <DialogContent>
-                                        "Are you sure you want to delete the recipe?"
-                                    </DialogContent>
-                                    <DialogActions>
-                                        <Button
-                                            on:click=on_delete
-                                            appearance=ButtonAppearance::Primary
-                                        >
-                                            "Yes"
-                                        </Button>
-                                        <Button on:click=move |_| open.set(false)>"No"</Button>
-                                    </DialogActions>
-                                </DialogBody>
-                            </DialogSurface>
-                        </Dialog>
-                    </CardHeaderAction>
-                </CardHeader>
-                <CardPreview>
-                    <RecipeImage src=recipe.img />
-                </CardPreview>
-                <CardFooter>
-                    <Flex align=FlexAlign::Center>
-                        <Icon icon=icondata::AiClockCircleOutlined />
-                        <p class="ml-1 flex-none">{time}</p>
-                    </Flex>
-                    <Flex align=FlexAlign::Center>
-                        <Icon icon=icondata::AiShoppingCartOutlined />
-                        <p class="ml-1">{format_ingredients(recipe.ingredients.len())}</p>
-                    </Flex>
-                </CardFooter>
-            </Card>
-        </div>
+                    <Dialog open>
+                        <DialogSurface>
+                            <DialogBody>
+                                <DialogTitle>"Delete recipe"</DialogTitle>
+                                <DialogContent>
+                                    "Are you sure you want to delete the recipe?"
+                                </DialogContent>
+                                <DialogActions>
+                                    <Button on:click=on_delete appearance=ButtonAppearance::Primary>
+                                        "Yes"
+                                    </Button>
+                                    <Button on:click=move |_| open.set(false)>"No"</Button>
+                                </DialogActions>
+                            </DialogBody>
+                        </DialogSurface>
+                    </Dialog>
+                </CardHeaderAction>
+            </CardHeader>
+            <CardPreview>
+                <RecipeImage src=recipe.img />
+            </CardPreview>
+            <CardFooter>
+                <Flex align=FlexAlign::Center>
+                    <Icon icon=icondata::AiClockCircleOutlined />
+                    <p class="ml-1 flex-none">{time}</p>
+                </Flex>
+                <Flex align=FlexAlign::Center>
+                    <Icon icon=icondata::AiShoppingCartOutlined />
+                    <p class="ml-1">{format_ingredients(recipe.ingredients.len())}</p>
+                </Flex>
+            </CardFooter>
+        </Card>
     }
 }
 
@@ -216,9 +217,9 @@ fn RecipeIngredients(recipe: Recipe, ingredients: Vec<RecipeIngredient>) -> impl
     };
 
     view! {
-        <div class="flex flex-col w-full md:w-1/3 mb-12">
-            <h1 class="text-2xl">"Ingredients"</h1>
-            <Flex align=FlexAlign::Center>
+        <Card>
+            <h1 class="flex text-2xl justify-center">"Ingredients"</h1>
+            <Flex justify=FlexJustify::Center>
                 <Button
                     appearance=ButtonAppearance::Transparent
                     icon=icondata::AiMinusCircleOutlined
@@ -236,7 +237,7 @@ fn RecipeIngredients(recipe: Recipe, ingredients: Vec<RecipeIngredient>) -> impl
                     .into_iter()
                     .map(|ingredient| {
                         view! {
-                            <p class="p-4 mb-1 bg-neutral rounded-md">
+                            <p class="mb-1 bg-neutral rounded-md">
                                 {format!(
                                     "{} {} {}",
                                     ingredient
@@ -259,28 +260,35 @@ fn RecipeIngredients(recipe: Recipe, ingredients: Vec<RecipeIngredient>) -> impl
                     .collect::<Vec<_>>()
             }}
 
-        </div>
+        </Card>
     }
 }
 
 #[component]
 fn RecipeSteps(steps: Vec<String>) -> impl IntoView {
     view! {
-        <div class="flex flex-col w-full md:max-w-[40%]">
+        <Card>
             <h1 class="text-2xl pb-4">"Steps"</h1>
             {steps
                 .into_iter()
                 .enumerate()
                 .map(|(idx, step)| {
                     view! {
-                        <div class="p-4 mb-1 bg-neutral rounded-md">
-                            <h1 class="text-lg">{format!("Steg {}", idx + 1)}</h1>
+                        <Flex align=FlexAlign::Center>
+                            <Badge
+                                class="shrink-0"
+                                size=BadgeSize::ExtraLarge
+                                appearance=BadgeAppearance::Filled
+                                color=BadgeColor::Brand
+                            >
+                                {idx + 1}
+                            </Badge>
                             <p>{step}</p>
-                        </div>
+                        </Flex>
                     }
                 })
                 .collect::<Vec<_>>()}
-        </div>
+        </Card>
     }
 }
 

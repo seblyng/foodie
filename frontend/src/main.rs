@@ -17,7 +17,7 @@ use crate::views::home::Home;
 use crate::views::profile::Profile;
 use crate::views::recipe::create_recipe::CreateRecipe;
 use crate::views::recipe::edit_recipe::EditRecipe;
-use crate::views::recipe::recipe::Recipe;
+use crate::views::recipe::recipe::RecipePage;
 use crate::views::recipe::recipes::Recipes;
 
 mod components;
@@ -56,7 +56,7 @@ pub fn App() -> impl IntoView {
                                     path=path!("/recipes/create")
                                     view=private_route!(CreateRecipe)
                                 />
-                                <Route path=path!("/recipes/:id") view=private_route!(Recipe) />
+                                <Route path=path!("/recipes/:id") view=private_route!(RecipePage) />
                                 <Route
                                     path=path!("/recipes/:id/edit")
                                     view=private_route!(EditRecipe)
