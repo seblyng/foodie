@@ -10,7 +10,7 @@ use crate::components::loading::Loading;
 use crate::components::not_found::NotFound;
 use crate::context::toast::{use_toast, Toast, ToastType, ToasterTrait};
 use crate::views::recipe::recipe_image::RecipeImage;
-use chrono::{NaiveTime, Timelike};
+use crate::views::recipe::{format_ingredients, format_time, total_time};
 use common::recipe::{Recipe, RecipeIngredient};
 use leptos_router::NavigateOptions;
 use rust_decimal::prelude::ToPrimitive;
@@ -81,18 +81,9 @@ fn RecipeCard(recipe: Recipe) -> impl IntoView {
     let _recipe = recipe.clone();
     let toast = use_toast().unwrap();
     let time = move || {
-        let total_time = match (_recipe.prep_time, _recipe.baking_time) {
-            (Some(prep_time), Some(baking_time)) => NaiveTime::from_hms_opt(
-                prep_time.hour() + baking_time.hour(),
-                prep_time.minute() + baking_time.minute(),
-                0,
-            ),
-            (Some(prep_time), None) => Some(prep_time),
-            (None, Some(baking_time)) => Some(baking_time),
-            (None, None) => None,
-        };
-
-        total_time.map(format_time).unwrap_or_default()
+        total_time(_recipe.prep_time, _recipe.baking_time)
+            .map(format_time)
+            .unwrap_or_default()
     };
     let open = RwSignal::new(false);
 
@@ -290,20 +281,6 @@ fn RecipeSteps(steps: Vec<String>) -> impl IntoView {
                 .collect::<Vec<_>>()}
         </Card>
     }
-}
-
-fn format_time(time: NaiveTime) -> String {
-    match (time.hour(), time.minute()) {
-        (h, m) if h >= 1 && m >= 1 => format!("{h} h {m} min"),
-        (h, _) if h >= 1 => format!("{h} h"),
-        (_, m) if m >= 1 => format!("{m} min"),
-        _ => "".to_string(),
-    }
-}
-
-fn format_ingredients(len: usize) -> String {
-    let val = if len > 1 { "ingredients" } else { "ingredient" };
-    format!("{len} {val}")
 }
 
 fn compute_amount(amount: Decimal, old_serving: Ratio<i128>, new_serving: Ratio<i128>) -> Decimal {

@@ -1,3 +1,4 @@
+use chrono::Timelike;
 use leptos::prelude::*;
 use std::time::Duration;
 use thaw::*;
@@ -22,10 +23,10 @@ pub fn RecipeInfo(
 ) -> impl IntoView {
     let recipe = use_context::<RwSignal<CreateRecipe>>().unwrap();
     let name = slice!(recipe.name);
-    let servings = RwSignal::new(0);
+    let servings = RwSignal::new(recipe.get_untracked().servings.to_string());
 
     Effect::new(move || {
-        let serv = servings();
+        let serv = servings().parse::<i32>().unwrap_or_default();
         recipe.update(|r| r.servings = serv);
     });
 
@@ -46,15 +47,21 @@ pub fn RecipeInfo(
                 rules=vec![InputRule::required(true.into())]
             />
 
-            <FormFieldNumberInput<i32>
+            <FormFieldNumberInput
                 class="col-span-12"
                 name="servings"
-                step_page=1
                 placeholder="Servings"
                 value=servings
                 rules=vec![
-                    SpinButtonRule::validator(move |v: &i32, _| {
-                        if (0..=72).contains(v) {
+                    InputRule::validator(move |v: &String, _| {
+                        let Ok(val) = v.parse::<i32>() else {
+                            return Err(
+                                FieldValidationState::Error(
+                                    "Must be a number between 0 and 72".to_string(),
+                                ),
+                            )
+                        };
+                        if (0..=72).contains(&val) {
                             Ok(())
                         } else {
                             Err(
@@ -81,10 +88,18 @@ pub fn RecipeInfo(
 
 #[component]
 fn RecipeDuration(recipe: RwSignal<CreateRecipe>) -> impl IntoView {
-    let baking_time_minutes = RwSignal::new(0);
+    let baking_time_minutes = RwSignal::new(
+        recipe
+            .get_untracked()
+            .baking_time
+            .map(|it| (it.hour() * 60 + it.minute()).to_string())
+            .unwrap_or_default(),
+    );
 
     Effect::new(move || {
-        let total_minutes = baking_time_minutes();
+        let Ok(total_minutes) = baking_time_minutes().parse::<u32>() else {
+            return;
+        };
         let hours = total_minutes / 60;
         let minutes = total_minutes % 60;
         if let Some(baking_time) = chrono::NaiveTime::from_hms_opt(hours, minutes, 0) {
@@ -94,10 +109,18 @@ fn RecipeDuration(recipe: RwSignal<CreateRecipe>) -> impl IntoView {
         }
     });
 
-    let prep_time_minutes = RwSignal::new(0);
+    let prep_time_minutes = RwSignal::new(
+        recipe
+            .get_untracked()
+            .prep_time
+            .map(|it| (it.hour() * 60 + it.minute()).to_string())
+            .unwrap_or_default(),
+    );
 
     Effect::new(move || {
-        let total_minutes = prep_time_minutes();
+        let Ok(total_minutes) = prep_time_minutes().parse::<u32>() else {
+            return;
+        };
         let hours = total_minutes / 60;
         let minutes = total_minutes % 60;
         if let Some(prep_time) = chrono::NaiveTime::from_hms_opt(hours, minutes, 0) {
@@ -107,31 +130,41 @@ fn RecipeDuration(recipe: RwSignal<CreateRecipe>) -> impl IntoView {
         }
     });
 
-    let valid_time = |v: &u32| match (0..=500).contains(v) {
-        true => Ok(()),
-        false => Err(FieldValidationState::Error(
-            "Must be a number between 0 and 500".to_string(),
-        )),
+    let valid_time = |v: &String| {
+        if v.is_empty() {
+            return Ok(());
+        }
+
+        let Ok(val) = v.parse::<u32>() else {
+            return Err(FieldValidationState::Error(
+                "Must be a number between 0 and 500".to_string(),
+            ));
+        };
+        match (0..500).contains(&val) {
+            true => Ok(()),
+            false => Err(FieldValidationState::Error(
+                "Must be a number between 0 and 500".to_string(),
+            )),
+        }
     };
 
     view! {
-        <FormFieldNumberInput<u32>
+        <FormFieldNumberInput
             class="col-span-12"
             name="baking_time"
-            step_page=1
-            placeholder="Baking time minutes"
+            placeholder="Baking time"
             value=baking_time_minutes
-            rules=vec![SpinButtonRule::validator(move |v: &u32, _| valid_time(v))]
+            rules=vec![InputRule::validator(move |v: &String, _| valid_time(v))]
         />
 
-        <FormFieldNumberInput<u32>
+        <FormFieldNumberInput
             class="col-span-12"
             name="prep_time"
-            step_page=1
-            placeholder="Prep time minutes"
+            placeholder="Prep time"
             value=prep_time_minutes
-            rules=vec![SpinButtonRule::validator(move |v: &u32, _| valid_time(v))]
+            rules=vec![InputRule::validator(move |v: &String, _| valid_time(v))]
         />
+
     }
 }
 
@@ -183,10 +216,9 @@ fn FileInput(
 
     view! {
         <div class="col-span-12">
-            <Upload accept="image/*" custom_request class="flex flex-col min-h-96">
+            <Upload accept="image/*" custom_request class="flex flex-col">
                 {image_view}
             </Upload>
-
         </div>
     }
 }

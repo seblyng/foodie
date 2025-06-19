@@ -15,12 +15,14 @@ pub fn RecipeIngredients() -> impl IntoView {
     let recipe_ingredient = RwSignal::new(CreateRecipeIngredient::default());
 
     let name = slice!(recipe_ingredient.name);
-    let amount = RwSignal::new(0.0);
+    let amount = RwSignal::new(String::new());
 
     Effect::new(move || {
-        let a = amount();
+        let Ok(a) = amount().parse::<Decimal>() else {
+            return;
+        };
         recipe_ingredient.update(|ri| {
-            ri.amount = Decimal::from_f64_retain(a);
+            ri.amount = Some(a);
         });
     });
 
@@ -32,10 +34,9 @@ pub fn RecipeIngredients() -> impl IntoView {
 
     view! {
         <FormGroup>
-            <FormFieldNumberInput<f64>
+            <FormFieldNumberInput
                 name="amount"
                 class="md:col-span-3 col-span-6"
-                step_page=1.0
                 placeholder="Amount"
                 value=amount
             />
@@ -44,7 +45,11 @@ pub fn RecipeIngredients() -> impl IntoView {
                 {move || {
                     common::recipe::Unit::iter()
                         .map(|u| {
-                            view! { <option>{u.to_string()}</option> }
+                            view! {
+                                <ComboboxOption text=u.to_string() value=u.to_string()>
+                                    {u.to_string()}
+                                </ComboboxOption>
+                            }
                         })
                         .collect::<Vec<_>>()
                 }}
@@ -59,7 +64,7 @@ pub fn RecipeIngredients() -> impl IntoView {
                         .update(|r| {
                             r.ingredients.push(recipe_ingredient.get_untracked());
                             recipe_ingredient.set(CreateRecipeIngredient::default());
-                            amount.set(0.0);
+                            amount.set(String::new());
                         })
                 }
             >
