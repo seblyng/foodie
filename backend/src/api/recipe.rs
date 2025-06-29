@@ -208,8 +208,11 @@ where
 
     Ok(Condition::any()
         .add(recipes::Column::UserId.eq(user_id))
-        .add(recipes::Column::UserId.is_in(friends_ids))
-        .add(recipes::Column::Visibility.eq(RecipeVisibility::Friends)))
+        .add(
+            Condition::all()
+                .add(recipes::Column::UserId.is_in(friends_ids))
+                .add(recipes::Column::Visibility.eq(RecipeVisibility::Friends)),
+        ))
 }
 
 // Gets all the recipes for the user, which includes the ones

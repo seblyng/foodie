@@ -390,3 +390,48 @@ async fn test_get_shared_recipes(pool: PgPool) -> Result<(), anyhow::Error> {
 
     Ok(())
 }
+
+#[sqlx::test(migrations = false)]
+async fn test_get_shared_recipes_private_no_access(pool: PgPool) -> Result<(), anyhow::Error> {
+    let app = TestApp::new(pool.clone()).await?;
+    let mut pizza_recipe = get_pizza_recipe().await?;
+    let mut toast_recipe = get_toast_recipe().await?;
+    let mut pancake_recipe = get_pancake_recipe().await?;
+
+    pizza_recipe.visibility = RecipeVisibility::Private;
+    toast_recipe.visibility = RecipeVisibility::Private;
+    pancake_recipe.visibility = RecipeVisibility::Private;
+
+    let new_user = app
+        .create_user(&CreateUser {
+            name: "foo".to_string(),
+            email: "bar@bar.com".to_string(),
+            password: "foo".to_string(),
+        })
+        .await?;
+
+    friendships::Entity::insert(friendships::ActiveModel {
+        status: Set(FriendshipStatus::Accepted),
+        requester_id: Set(app.user.id),
+        recipient_id: Set(new_user.id),
+        ..Default::default()
+    })
+    .exec(&app.pool)
+    .await?;
+
+    app.post("/api/recipes", Some(&pizza_recipe)).await?;
+    app.post("/api/recipes", Some(&pancake_recipe)).await?;
+    app.post("/api/recipes", Some(&toast_recipe)).await?;
+
+    app.login(&UserLogin {
+        email: "bar@bar.com".to_string(),
+        password: "foo".to_string(),
+    })
+    .await;
+
+    let res = app.get("/api/recipes").await?;
+    let recipes = res.json::<Vec<Recipe>>().await?;
+
+    assert_eq!(0, recipes.len());
+    Ok(())
+}
