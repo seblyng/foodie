@@ -11,8 +11,6 @@ pub fn Google() -> impl IntoView {
                 .await
                 .unwrap();
 
-            // TODO: This navigates before actually being authenticated.
-            // Should ideally wait until the callback is done
             let url = res.text().await.unwrap();
             window().unwrap().location().set_href(&url).unwrap();
         });

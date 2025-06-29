@@ -3,7 +3,6 @@ use crate::entities::users::Entity as UserEntity;
 use crate::{auth_backend::AuthSession, entities::users, ApiError};
 use argon2::password_hash::SaltString;
 use argon2::{Argon2, PasswordHash, PasswordHasher, PasswordVerifier};
-use axum::response::IntoResponse;
 use axum::{extract::State, Json};
 use common::user::{CreateUser, User, UserLogin};
 use hyper::StatusCode;
@@ -61,14 +60,17 @@ pub async fn login(
     State(db): State<DatabaseConnection>,
     mut auth: AuthSession,
     Json(user_login): Json<UserLogin>,
-) -> Result<impl IntoResponse, ApiError> {
+) -> Result<Json<User>, ApiError> {
     let user_model = users::Entity::find()
         .filter(users::Column::Email.contains(user_login.email))
         .one(&db)
         .await?;
 
     let Some(user_model) = user_model else {
-        return Ok(StatusCode::UNAUTHORIZED.into_response());
+        return Err(ApiError::StatusCode(
+            StatusCode::UNAUTHORIZED,
+            "".to_string(),
+        ));
     };
 
     match user_model.password {
@@ -78,19 +80,24 @@ pub async fn login(
                 .verify_password(user_login.password.as_bytes(), &hash)
                 .is_ok()
             {
-                auth.login(&User {
+                let user = User {
                     id: user_model.id,
                     name: user_model.name,
                     email: user_model.email,
-                })
-                .await
-                .unwrap();
-                Ok(().into_response())
+                };
+                auth.login(&user).await.unwrap();
+                Ok(Json(user))
             } else {
-                Ok(StatusCode::UNAUTHORIZED.into_response())
+                Err(ApiError::StatusCode(
+                    StatusCode::UNAUTHORIZED,
+                    "".to_string(),
+                ))
             }
         }
-        None => Ok(StatusCode::INTERNAL_SERVER_ERROR.into_response()),
+        None => Err(ApiError::StatusCode(
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "".to_string(),
+        )),
     }
 }
 

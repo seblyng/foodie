@@ -15,6 +15,7 @@ use axum::{
     Json,
 };
 use common::{friendship::FriendshipAnswer, user::UserWithRelation};
+use hyper::StatusCode;
 use sea_orm::{
     sea_query::OnConflict,
     ActiveModelTrait,
@@ -148,14 +149,16 @@ where
     match friendship.status.as_ref() {
         FriendshipStatus::Accepted => {
             if friendship_answer.status != FriendshipStatus::Blocked.into() {
-                return Err(ApiError::BadRequest(
+                return Err(ApiError::StatusCode(
+                    StatusCode::BAD_REQUEST,
                     "Only possible to block an accepted friendship".to_string(),
                 ));
             }
         }
         FriendshipStatus::Pending => {
             if friendship.requester_id.as_ref() == &id {
-                return Err(ApiError::BadRequest(
+                return Err(ApiError::StatusCode(
+                    StatusCode::BAD_REQUEST,
                     "Only recipient can accept/reject".to_string(),
                 ));
             }
