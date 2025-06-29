@@ -46,6 +46,18 @@ services:
       - AWS_PASSWORD=$AWS_PASSWORD
       - ALLOWED_MAILS=$ALLOWED_MAILS
 
+  redis:
+    networks:
+      - foodie-network
+    image: redis:latest
+    hostname: foodie_redis
+    container_name: foodie_redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - ./redis.conf:/etc/redis/redis.conf
+      - ../.db/foodie_redis:/data
+
   postgres:
     networks:
       - foodie-network

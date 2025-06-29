@@ -8,6 +8,7 @@ use crate::{
         users::get_users,
     },
     auth_backend::{get_oauth_client, Backend},
+    redis_store::RedisStore,
     storage::{self, aws, FoodieStorage},
 };
 use axum::{
@@ -19,7 +20,7 @@ use axum::{
 };
 use axum_login::{
     login_required,
-    tower_sessions::{cookie::time::Duration, Expiry, MemoryStore, SessionManagerLayer},
+    tower_sessions::{cookie::time::Duration, Expiry, SessionManagerLayer},
     AuthManagerLayerBuilder,
 };
 use hyper::{header::CONTENT_TYPE, Method};
@@ -50,7 +51,7 @@ pub struct App {
     pub router: Router,
     pub app_state: AppState<aws::FoodieAws>,
     pub backend: Backend,
-    pub session_layer: SessionManagerLayer<MemoryStore>,
+    pub session_layer: SessionManagerLayer<RedisStore>,
 }
 
 static INIT: Once = Once::new();
@@ -67,7 +68,7 @@ impl App {
 
         let oauth_client = get_oauth_client()?;
 
-        let session_store = MemoryStore::default();
+        let session_store = RedisStore::new(dotenv::var("REDIS_URL")?).await?;
         let session_layer = SessionManagerLayer::new(session_store)
             // TODO: Turn on for prod
             .with_secure(false)
