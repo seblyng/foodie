@@ -63,7 +63,7 @@ pub fn PendingRequests() -> impl IntoView {
                                         .map(|u| {
                                             view! {
                                                 <li>
-                                                    <UserList user=u />
+                                                    <UserList user=u resource=users_resource />
                                                 </li>
                                             }
                                         })
@@ -86,7 +86,10 @@ enum Answer {
 
 // TODO(seb): Remove them from the list after answering
 #[component]
-pub fn UserList(user: UserWithRelation) -> impl IntoView {
+pub fn UserList(
+    user: UserWithRelation,
+    resource: LocalResource<Option<Vec<UserWithRelation>>>,
+) -> impl IntoView {
     let toast = use_toast().unwrap();
     let on_click = move |id: i32, answer: Answer| {
         spawn_local(async move {
@@ -119,6 +122,7 @@ pub fn UserList(user: UserWithRelation) -> impl IntoView {
                 body: "Answered friend request".to_string(),
                 timeout: Some(Duration::from_secs(5)),
             });
+            resource.refetch();
         })
     };
 
