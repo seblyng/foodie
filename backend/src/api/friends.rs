@@ -115,7 +115,9 @@ where
     let users = fetch_user_relationships(&state.db, user.id, "")
         .await?
         .into_iter()
-        .filter(|it| it.status == Some(FriendshipStatus::Pending.into()))
+        .filter(|it| {
+            it.status == Some(FriendshipStatus::Pending.into()) && it.requester_id != Some(user.id)
+        })
         .collect::<Vec<_>>();
 
     Ok(Json(users))
