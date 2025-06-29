@@ -8,8 +8,7 @@ use crate::{
         users::get_users,
     },
     auth_backend::{get_oauth_client, Backend},
-    redis_store::RedisStore,
-    storage::{self, aws, FoodieStorage},
+    storage::{self, FoodieStorage},
 };
 use axum::{
     error_handling::HandleErrorLayer,
@@ -28,6 +27,7 @@ use sea_orm::DatabaseConnection;
 use std::sync::Once;
 use tower::ServiceBuilder;
 use tower_http::{catch_panic::CatchPanicLayer, cors::CorsLayer};
+use tower_sessions_core::SessionStore;
 
 #[derive(Clone)]
 pub struct AppState<T>
@@ -49,15 +49,15 @@ where
 
 pub struct App {
     pub router: Router,
-    pub app_state: AppState<aws::FoodieAws>,
-    pub backend: Backend,
-    pub session_layer: SessionManagerLayer<RedisStore>,
 }
 
 static INIT: Once = Once::new();
 
 impl App {
-    pub async fn new(db: DatabaseConnection) -> Result<Self, anyhow::Error> {
+    pub async fn new<S>(db: DatabaseConnection, session_store: S) -> Result<Self, anyhow::Error>
+    where
+        S: SessionStore + Clone,
+    {
         INIT.call_once(|| {
             env_logger::builder()
                 .is_test(true)
@@ -68,7 +68,6 @@ impl App {
 
         let oauth_client = get_oauth_client()?;
 
-        let session_store = RedisStore::new(dotenv::var("REDIS_URL")?).await?;
         let session_layer = SessionManagerLayer::new(session_store)
             .with_secure(!cfg!(debug_assertions))
             .with_expiry(Expiry::OnInactivity(Duration::days(1)));
@@ -138,11 +137,6 @@ impl App {
             .layer(CatchPanicLayer::new())
             .layer(cors);
 
-        Ok(Self {
-            router,
-            app_state,
-            backend,
-            session_layer,
-        })
+        Ok(Self { router })
     }
 }

@@ -2,6 +2,7 @@ mod friends;
 mod recipe;
 mod users;
 
+use axum_login::tower_sessions::MemoryStore;
 use common::user::{CreateUser, User, UserLogin};
 use migration::MigratorTrait;
 use sea_orm::{DatabaseConnection, SqlxPostgresConnector};
@@ -32,7 +33,7 @@ impl TestApp {
         let address = format!("http://{}", listener.local_addr()?);
         let connection = SqlxPostgresConnector::from_sqlx_postgres_pool(pool);
 
-        let app = App::new(connection.clone()).await?;
+        let app = App::new(connection.clone(), MemoryStore::default()).await?;
         let server = axum::serve(listener, app.router.into_make_service());
         tokio::spawn(server.into_future());
 
