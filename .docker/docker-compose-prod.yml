@@ -45,6 +45,7 @@ services:
       - AWS_USER=$AWS_USER
       - AWS_PASSWORD=$AWS_PASSWORD
       - ALLOWED_MAILS=$ALLOWED_MAILS
+      - REDIS_URL=$REDIS_URL
 
   redis:
     networks:
@@ -55,7 +56,7 @@ services:
     ports:
       - "6379:6379"
     volumes:
-      - ./redis.conf:/etc/redis/redis.conf
+      - ../redis.conf:/etc/redis/redis.conf
       - ../.db/foodie_redis:/data
 
   postgres:
