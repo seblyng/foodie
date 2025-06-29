@@ -14,10 +14,7 @@ use axum::{
     response::IntoResponse,
     Json,
 };
-use common::{
-    friendship::FriendshipAnswer,
-    user::{User, UserWithRelation},
-};
+use common::{friendship::FriendshipAnswer, user::UserWithRelation};
 use sea_orm::{
     sea_query::OnConflict,
     ActiveModelTrait,
@@ -172,24 +169,6 @@ where
     friendship.update(db).await?;
 
     Ok(())
-}
-
-pub async fn get_friends<C>(db: &C, user_id: i32) -> Result<Vec<User>, anyhow::Error>
-where
-    C: ConnectionTrait,
-{
-    let friends = fetch_user_relationships(db, user_id, "")
-        .await?
-        .into_iter()
-        .filter(|it| it.status == Some(FriendshipStatus::Accepted.into()))
-        .map(|it| User {
-            id: it.id,
-            name: it.name,
-            email: it.email,
-        })
-        .collect();
-
-    Ok(friends)
 }
 
 macro_rules! convert_status {

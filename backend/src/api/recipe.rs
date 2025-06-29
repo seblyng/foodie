@@ -1,10 +1,10 @@
 use crate::{
-    api::friends::get_friends,
+    api::users::fetch_user_relationships,
     app::AppState,
     auth_backend::AuthSession,
     entities::{
-        ingredients, recipe_ingredients, recipe_share, recipes,
-        sea_orm_active_enums::{self},
+        ingredients, recipe_ingredients, recipes,
+        sea_orm_active_enums::{self, FriendshipStatus, RecipeVisibility},
     },
     storage::FoodieStorage,
     ApiError,
@@ -18,8 +18,8 @@ use common::recipe::{CreateRecipe, Recipe, RecipeImage, RecipeIngredient};
 use futures_util::{future::join_all, StreamExt};
 use hyper::Method;
 use sea_orm::{
-    sea_query::OnConflict, ActiveValue::NotSet, ColumnTrait, ConnectionTrait, DatabaseConnection,
-    EntityTrait, LoaderTrait, QueryFilter, Set, StreamTrait, TransactionTrait,
+    sea_query::OnConflict, ActiveValue::NotSet, ColumnTrait, Condition, ConnectionTrait,
+    DatabaseConnection, EntityTrait, LoaderTrait, QueryFilter, Set, StreamTrait, TransactionTrait,
 };
 use uuid::Uuid;
 
@@ -51,30 +51,10 @@ where
         baking_time: Set(recipe.baking_time),
         created_at: NotSet,
         updated_at: NotSet,
+        visibility: Set(recipe.visibility.into()),
     })
     .exec_with_returning(&tx)
     .await?;
-
-    let shared_recipes = recipe
-        .shared_with
-        .iter()
-        .map(|id| recipe_share::ActiveModel {
-            id: NotSet,
-            recipe_id: Set(created_recipe.id),
-            created_at: NotSet,
-            shared_with_id: Set(*id),
-        })
-        .collect::<Vec<_>>();
-
-    if !shared_recipes.is_empty() {
-        let friends = get_friends(&tx, user.id).await?;
-        let filtered_shared_recipes = shared_recipes
-            .into_iter()
-            .filter(|it| friends.iter().any(|f| f.id == *it.shared_with_id.as_ref()));
-        recipe_share::Entity::insert_many(filtered_shared_recipes)
-            .exec(&tx)
-            .await?;
-    }
 
     let models = created_ingredients.into_iter().filter_map(|i| {
         let ri = recipe.ingredients.iter().find(|ri| ri.name == i.name)?;
@@ -107,7 +87,7 @@ where
         updated_at: created_recipe.updated_at,
         prep_time: created_recipe.prep_time,
         baking_time: created_recipe.baking_time,
-        shared_with: recipe.shared_with,
+        visibility: created_recipe.visibility.into(),
         ingredients,
     }))
 }
@@ -123,19 +103,12 @@ where
 {
     let user = auth.user.unwrap();
 
+    let has_access = has_access_to_recipe(&state.db, user.id).await?;
     let recipe_model = recipes::Entity::find_by_id(recipe_id)
-        .filter(recipes::Column::UserId.eq(user.id))
+        .filter(has_access)
         .one(&state.db)
         .await?
         .ok_or(ApiError::RecordNotFound)?;
-
-    let shared_with = recipe_share::Entity::find()
-        .filter(recipe_share::Column::RecipeId.eq(recipe_id))
-        .all(&state.db)
-        .await?
-        .iter()
-        .map(|it| it.shared_with_id)
-        .collect::<Vec<_>>();
 
     let ingredients = get_recipe_ingredients(&state.db, recipe_model.id).await?;
 
@@ -152,28 +125,25 @@ where
         updated_at: recipe_model.updated_at,
         prep_time: recipe_model.prep_time,
         baking_time: recipe_model.baking_time,
-        shared_with,
+        visibility: recipe_model.visibility.into(),
         ingredients,
     }))
 }
 
 async fn _get_recipes<T>(
-    recipes: Vec<(recipes::Model, Vec<recipe_share::Model>)>,
+    recipes: Vec<recipes::Model>,
     state: AppState<T>,
 ) -> Result<Json<Vec<Recipe>>, ApiError>
 where
     T: FoodieStorage + Send + Sync + Clone,
 {
-    let rec = recipes
-        .iter()
-        .map(|r| r.0.clone().to_owned())
-        .collect::<Vec<_>>();
-
-    let ingredients = rec
+    let ingredients = recipes
         .load_many_to_many(ingredients::Entity, recipe_ingredients::Entity, &state.db)
         .await?;
 
-    let ingredients_with_units = rec.load_many(recipe_ingredients::Entity, &state.db).await?;
+    let ingredients_with_units = recipes
+        .load_many(recipe_ingredients::Entity, &state.db)
+        .await?;
 
     let recipes = recipes
         .into_iter()
@@ -197,23 +167,23 @@ where
                         })
                         .collect();
 
-                let recipe_image = get_presigned_url_for_get(state, r.0 .0.img)
+                let recipe_image = get_presigned_url_for_get(state, r.0.img)
                     .await
                     .ok()
                     .unwrap_or_default();
 
                 Recipe {
-                    id: r.0 .0.id,
-                    user_id: r.0 .0.user_id,
-                    name: r.0 .0.name,
-                    description: r.0 .0.description,
-                    instructions: r.0 .0.instructions,
+                    id: r.0.id,
+                    user_id: r.0.user_id,
+                    name: r.0.name,
+                    description: r.0.description,
+                    instructions: r.0.instructions,
                     img: recipe_image,
-                    servings: r.0 .0.servings,
-                    updated_at: r.0 .0.updated_at,
-                    prep_time: r.0 .0.prep_time,
-                    baking_time: r.0 .0.baking_time,
-                    shared_with: r.0 .1.iter().map(|it| it.shared_with_id).collect(),
+                    servings: r.0.servings,
+                    updated_at: r.0.updated_at,
+                    prep_time: r.0.prep_time,
+                    baking_time: r.0.baking_time,
+                    visibility: r.0.visibility.into(),
                     ingredients,
                 }
             }
@@ -225,7 +195,25 @@ where
     Ok(Json(recipes))
 }
 
-// Gets all the recipes for the user
+pub async fn has_access_to_recipe<C>(db: &C, user_id: i32) -> Result<Condition, anyhow::Error>
+where
+    C: ConnectionTrait,
+{
+    let friends_ids = fetch_user_relationships(db, user_id, "")
+        .await?
+        .into_iter()
+        .filter(|it| it.status == Some(FriendshipStatus::Accepted.into()))
+        .map(|it| it.id)
+        .collect::<Vec<_>>();
+
+    Ok(Condition::any()
+        .add(recipes::Column::UserId.eq(user_id))
+        .add(recipes::Column::UserId.is_in(friends_ids))
+        .add(recipes::Column::Visibility.eq(RecipeVisibility::Friends)))
+}
+
+// Gets all the recipes for the user, which includes the ones
+// that friends have shared with them
 pub async fn get_recipes<T>(
     auth: AuthSession,
     State(state): State<AppState<T>>,
@@ -234,9 +222,10 @@ where
     T: FoodieStorage + Send + Sync + Clone,
 {
     let user = auth.user.unwrap();
+    let has_access = has_access_to_recipe(&state.db, user.id).await?;
+
     let recipes = recipes::Entity::find()
-        .filter(recipes::Column::UserId.eq(user.id))
-        .find_with_related(recipe_share::Entity)
+        .filter(has_access)
         .all(&state.db)
         .await?;
 
@@ -271,6 +260,7 @@ where
         baking_time: Set(recipe.baking_time),
         created_at: NotSet,
         updated_at: Set(chrono::Utc::now().into()),
+        visibility: Set(recipe.visibility.into()),
     })
     .filter(recipes::Column::Id.eq(recipe_id))
     .filter(recipes::Column::UserId.eq(user.id))
@@ -313,7 +303,7 @@ where
         updated_at: updated_recipe.updated_at,
         prep_time: updated_recipe.prep_time,
         baking_time: updated_recipe.baking_time,
-        shared_with: recipe.shared_with,
+        visibility: updated_recipe.visibility.into(),
         ingredients,
     }))
 }
@@ -435,24 +425,6 @@ where
     Ok(ingredients)
 }
 
-// Gets all the recipes shared with the users
-pub async fn get_shared_recipes<T>(
-    auth: AuthSession,
-    State(state): State<AppState<T>>,
-) -> Result<Json<Vec<Recipe>>, ApiError>
-where
-    T: FoodieStorage + Send + Sync + Clone,
-{
-    let user = auth.user.unwrap();
-    let shared_recipes = recipes::Entity::find()
-        .find_with_related(recipe_share::Entity)
-        .filter(recipe_share::Column::SharedWithId.eq(user.id))
-        .all(&state.db)
-        .await?;
-
-    _get_recipes(shared_recipes, state).await
-}
-
 macro_rules! convert_unit {
     ($first:ty, $second: ty) => {
         impl From<$first> for $second {
@@ -478,3 +450,25 @@ macro_rules! convert_unit {
 
 convert_unit!(common::recipe::Unit, sea_orm_active_enums::Unit);
 convert_unit!(sea_orm_active_enums::Unit, common::recipe::Unit);
+
+macro_rules! convert_visibility {
+    ($first:ty, $second: ty) => {
+        impl From<$first> for $second {
+            fn from(value: $first) -> Self {
+                match value {
+                    <$first>::Friends => <$second>::Friends,
+                    <$first>::Private => <$second>::Private,
+                }
+            }
+        }
+    };
+}
+
+convert_visibility!(
+    common::recipe::RecipeVisibility,
+    sea_orm_active_enums::RecipeVisibility
+);
+convert_visibility!(
+    sea_orm_active_enums::RecipeVisibility,
+    common::recipe::RecipeVisibility
+);

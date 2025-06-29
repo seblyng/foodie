@@ -3,7 +3,7 @@ use backend::entities::{
 };
 use chrono::NaiveTime;
 use common::{
-    recipe::{CreateRecipe, CreateRecipeIngredient, Recipe, Unit},
+    recipe::{CreateRecipe, CreateRecipeIngredient, Recipe, RecipeVisibility, Unit},
     user::{CreateUser, UserLogin},
 };
 use reqwest::StatusCode;
@@ -40,8 +40,8 @@ async fn get_pizza_recipe() -> Result<CreateRecipe, anyhow::Error> {
         ingredients: ingredients.to_vec(),
         baking_time: NaiveTime::from_hms_opt(0, 20, 0),
         prep_time: NaiveTime::from_hms_opt(4, 0, 0),
-        shared_with: vec![],
         servings: 4,
+        visibility: RecipeVisibility::Friends,
     })
 }
 
@@ -72,8 +72,8 @@ async fn get_pancake_recipe() -> Result<CreateRecipe, anyhow::Error> {
         ingredients: ingredients.to_vec(),
         baking_time: NaiveTime::from_hms_opt(0, 10, 0),
         prep_time: NaiveTime::from_hms_opt(1, 0, 0),
-        shared_with: vec![],
         servings: 4,
+        visibility: RecipeVisibility::Friends,
     })
 }
 
@@ -104,8 +104,8 @@ async fn get_toast_recipe() -> Result<CreateRecipe, anyhow::Error> {
         ingredients: ingredients.to_vec(),
         baking_time: NaiveTime::from_hms_opt(0, 11, 0),
         prep_time: NaiveTime::from_hms_opt(0, 10, 0),
-        shared_with: vec![],
         servings: 2,
+        visibility: RecipeVisibility::Friends,
     })
 }
 
@@ -314,9 +314,9 @@ async fn test_update_recipe(pool: PgPool) -> Result<(), anyhow::Error> {
 #[sqlx::test(migrations = false)]
 async fn test_get_shared_recipes(pool: PgPool) -> Result<(), anyhow::Error> {
     let app = TestApp::new(pool.clone()).await?;
-    let mut pizza_recipe = get_pizza_recipe().await?;
-    let mut toast_recipe = get_toast_recipe().await?;
-    let mut pancake_recipe = get_pancake_recipe().await?;
+    let pizza_recipe = get_pizza_recipe().await?;
+    let toast_recipe = get_toast_recipe().await?;
+    let pancake_recipe = get_pancake_recipe().await?;
 
     let new_user = app
         .create_user(&CreateUser {
@@ -325,10 +325,6 @@ async fn test_get_shared_recipes(pool: PgPool) -> Result<(), anyhow::Error> {
             password: "foo".to_string(),
         })
         .await?;
-
-    pizza_recipe.shared_with = vec![new_user.id];
-    toast_recipe.shared_with = vec![new_user.id];
-    pancake_recipe.shared_with = vec![new_user.id];
 
     friendships::Entity::insert(friendships::ActiveModel {
         status: Set(FriendshipStatus::Accepted),
@@ -349,7 +345,7 @@ async fn test_get_shared_recipes(pool: PgPool) -> Result<(), anyhow::Error> {
     })
     .await;
 
-    let res = app.get("/api/recipes/shared").await?;
+    let res = app.get("/api/recipes").await?;
     let recipes = res.json::<Vec<Recipe>>().await?;
 
     let get_ingredients = |i: usize| {

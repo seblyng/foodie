@@ -8,6 +8,7 @@ use thaw::*;
 
 use crate::components::loading::Loading;
 use crate::components::not_found::NotFound;
+use crate::context::auth::AuthContext;
 use crate::context::toast::{use_toast, Toast, ToastType, ToasterTrait};
 use crate::views::recipe::recipe_image::RecipeImage;
 use crate::views::recipe::{format_ingredients, format_time, total_time};

@@ -16,8 +16,26 @@ pub struct CreateRecipe {
     pub prep_time: Option<NaiveTime>,
     pub baking_time: Option<NaiveTime>,
     pub ingredients: Vec<CreateRecipeIngredient>,
-    // user_ids to share the recipe with
-    pub shared_with: Vec<i32>,
+    pub visibility: RecipeVisibility,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, Default, Display, EnumIter)]
+pub enum RecipeVisibility {
+    #[default]
+    Friends,
+    Private,
+}
+
+impl FromStr for RecipeVisibility {
+    type Err = ();
+
+    fn from_str(input: &str) -> Result<Self, Self::Err> {
+        match input {
+            "Friends" => Ok(Self::Friends),
+            "Private" => Ok(Self::Private),
+            _ => Err(()),
+        }
+    }
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
@@ -33,7 +51,7 @@ pub struct Recipe {
     pub prep_time: Option<NaiveTime>,
     pub baking_time: Option<NaiveTime>,
     pub ingredients: Vec<RecipeIngredient>,
-    pub shared_with: Vec<i32>,
+    pub visibility: RecipeVisibility,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, Copy, Eq, PartialEq, EnumIter, Display)]
@@ -111,7 +129,7 @@ impl From<Recipe> for CreateRecipe {
             servings: recipe.servings,
             prep_time: recipe.prep_time,
             baking_time: recipe.baking_time,
-            shared_with: recipe.shared_with,
+            visibility: recipe.visibility,
             ingredients: recipe
                 .ingredients
                 .into_iter()

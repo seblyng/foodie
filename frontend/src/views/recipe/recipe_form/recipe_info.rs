@@ -1,14 +1,16 @@
 use chrono::Timelike;
+use common::strum::IntoEnumIterator;
 use leptos::prelude::*;
 use std::time::Duration;
 use thaw::*;
 use web_sys::{File, Url};
 
+use crate::components::form::form_fields::form_field_combobox::FormFieldSelect;
 use crate::components::form::form_fields::form_field_input::FormFieldInput;
 use crate::components::form::form_fields::form_field_number_input::FormFieldNumberInput;
 use crate::components::form::form_fields::form_field_textarea::FormFieldTextarea;
 use crate::context::toast::{use_toast, Toast, ToastType, ToasterTrait};
-use common::recipe::CreateRecipe;
+use common::recipe::{CreateRecipe, RecipeVisibility};
 
 use crate::components::form::FormGroup;
 use crate::views::recipe::recipe_image::RecipeImage;
@@ -34,6 +36,16 @@ pub fn RecipeInfo(
         recipe,
         |r| r.description.clone().unwrap_or_default(),
         |r, s: String| r.description = Some(s),
+    );
+
+    let visibility = create_slice(
+        recipe,
+        |r| r.visibility.to_string(),
+        |r, n: String| {
+            r.visibility = n
+                .parse::<RecipeVisibility>()
+                .unwrap_or(RecipeVisibility::Friends)
+        },
     );
 
     view! {
@@ -82,6 +94,20 @@ pub fn RecipeInfo(
                 value=description
                 placeholder="Description"
             />
+
+            <FormFieldSelect class="col-span-12" value=visibility placeholder="Visibility">
+                {move || {
+                    common::recipe::RecipeVisibility::iter()
+                        .map(|u| {
+                            view! {
+                                <ComboboxOption text=u.to_string() value=u.to_string()>
+                                    {u.to_string()}
+                                </ComboboxOption>
+                            }
+                        })
+                        .collect::<Vec<_>>()
+                }}
+            </FormFieldSelect>
         </FormGroup>
     }
 }
