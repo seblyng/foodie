@@ -1,5 +1,7 @@
 use serde::{Deserialize, Serialize};
 
+use crate::friendship::FriendshipStatus;
+
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct CreateUser {
     pub name: String,
@@ -14,6 +16,16 @@ pub struct User {
     pub name: String,
     pub email: String,
     // picture: String,
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
+pub struct UserWithRelation {
+    pub id: i32,
+    pub name: String,
+    pub email: String,
+    pub requester_id: Option<i32>,
+    pub recipient_id: Option<i32>,
+    pub status: Option<FriendshipStatus>,
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize, Default)]

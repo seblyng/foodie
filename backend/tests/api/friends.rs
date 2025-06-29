@@ -1,8 +1,5 @@
 use backend::entities::{friendships, sea_orm_active_enums::FriendshipStatus};
-use common::{
-    friendship::FriendshipAnswer,
-    user::{CreateUser, UserLogin},
-};
+use common::user::{CreateUser, UserLogin};
 use hyper::StatusCode;
 use sea_orm::{EntityTrait, PaginatorTrait};
 use sqlx::PgPool;
@@ -21,7 +18,7 @@ async fn test_send_friendrequest(pool: PgPool) -> Result<(), anyhow::Error> {
         })
         .await?;
 
-    app.post::<(), _>(format!("api/friends/new/{}", new_user.id), None)
+    app.post::<(), _>(format!("/api/friends/new/{}", new_user.id), None)
         .await?;
 
     let friendship = friendships::Entity::find_by_id((app.user.id, new_user.id))
@@ -39,14 +36,8 @@ async fn test_send_friendrequest(pool: PgPool) -> Result<(), anyhow::Error> {
     })
     .await;
 
-    app.post(
-        "api/friends/status",
-        Some(&FriendshipAnswer {
-            user_id: app.user.id,
-            status: common::friendship::FriendshipStatus::Accepted,
-        }),
-    )
-    .await?;
+    app.post::<(), _>(format!("/api/friends/accept/{}", app.user.id), None)
+        .await?;
 
     let friendship = friendships::Entity::find_by_id((app.user.id, new_user.id))
         .one(&app.pool)
@@ -72,7 +63,7 @@ async fn test_friendrequest_both_ways_should_fail(pool: PgPool) -> Result<(), an
         })
         .await?;
 
-    app.post::<(), _>(format!("api/friends/new/{}", new_user.id), None)
+    app.post::<(), _>(format!("/api/friends/new/{}", new_user.id), None)
         .await?;
 
     app.login(&UserLogin {
@@ -81,7 +72,7 @@ async fn test_friendrequest_both_ways_should_fail(pool: PgPool) -> Result<(), an
     })
     .await;
 
-    app.post::<(), _>(format!("api/friends/new/{}", app.user.id), None)
+    app.post::<(), _>(format!("/api/friends/new/{}", app.user.id), None)
         .await?;
 
     let count = friendships::Entity::find().count(&app.pool).await?;
@@ -103,17 +94,11 @@ async fn test_friendrequest_requester_cannot_accept(pool: PgPool) -> Result<(), 
         })
         .await?;
 
-    app.post::<(), _>(format!("api/friends/new/{}", new_user.id), None)
+    app.post::<(), _>(format!("/api/friends/new/{}", new_user.id), None)
         .await?;
 
     let res = app
-        .post(
-            "api/friends/status",
-            Some(&FriendshipAnswer {
-                user_id: new_user.id,
-                status: common::friendship::FriendshipStatus::Accepted,
-            }),
-        )
+        .post::<(), _>(format!("/api/friends/accept/{}", new_user.id), None)
         .await?;
 
     assert_eq!(StatusCode::BAD_REQUEST, res.status());
@@ -142,7 +127,7 @@ async fn test_friendrequest_cannot_set_accepted_to_pending(
         })
         .await?;
 
-    app.post::<(), _>(format!("api/friends/new/{}", new_user.id), None)
+    app.post::<(), _>(format!("/api/friends/new/{}", new_user.id), None)
         .await?;
 
     let friendship = friendships::Entity::find_by_id((app.user.id, new_user.id))
@@ -160,26 +145,8 @@ async fn test_friendrequest_cannot_set_accepted_to_pending(
     })
     .await;
 
-    app.post(
-        "api/friends/status",
-        Some(&FriendshipAnswer {
-            user_id: app.user.id,
-            status: common::friendship::FriendshipStatus::Accepted,
-        }),
-    )
-    .await?;
-
-    let res = app
-        .post(
-            "api/friends/status",
-            Some(&FriendshipAnswer {
-                user_id: app.user.id,
-                status: common::friendship::FriendshipStatus::Pending,
-            }),
-        )
+    app.post::<(), _>(format!("/api/friends/accept/{}", app.user.id), None)
         .await?;
-
-    assert_eq!(StatusCode::BAD_REQUEST, res.status());
 
     let friendship = friendships::Entity::find_by_id((app.user.id, new_user.id))
         .one(&app.pool)

@@ -1,7 +1,7 @@
 use crate::{
     api::{
         auth::{get_me, login, logout, register},
-        friends::{send_friend_request, set_friendship_status},
+        friends::{accept_friendship, get_pending, reject_friendship, send_friend_request},
         ingredient::{delete_ingredient, get_ingredient, get_ingredients, post_ingredient},
         oauth::{google_callback, google_login},
         recipe::{
@@ -98,8 +98,10 @@ impl App {
                     .nest(
                         "/friends",
                         Router::new()
-                            .route("/status", post(set_friendship_status))
-                            .route("/new/{id}", post(send_friend_request)),
+                            .route("/new/{id}", post(send_friend_request))
+                            .route("/accept/{id}", post(accept_friendship))
+                            .route("/reject/{id}", post(reject_friendship))
+                            .route("/pending", get(get_pending)),
                     )
                     .nest(
                         "/recipes",
