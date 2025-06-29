@@ -23,12 +23,6 @@ const TEST_EMAIL: &str = "foo@foo.com";
 const TEST_NAME: &str = "foo";
 const TEST_PASSWORD: &str = "foo";
 
-// TODO: Move this to another place to make the implementation details hidden from the tests.
-// Now the tests are able to access non public fields and methods which I do not like, as they are
-// in the same module
-
-// Maybe I want different `post_unauth` or something similar for the endpoints that should be
-// open. I am not sure if this is really needed, but think about it.
 impl TestApp {
     async fn new(pool: PgPool) -> Result<Self, anyhow::Error> {
         let listener = tokio::net::TcpListener::bind("127.0.0.1:0")

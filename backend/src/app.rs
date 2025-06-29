@@ -70,8 +70,7 @@ impl App {
 
         let session_store = RedisStore::new(dotenv::var("REDIS_URL")?).await?;
         let session_layer = SessionManagerLayer::new(session_store)
-            // TODO: Turn on for prod
-            .with_secure(false)
+            .with_secure(!cfg!(debug_assertions))
             .with_expiry(Expiry::OnInactivity(Duration::days(1)));
 
         let backend = Backend::new(db.clone(), oauth_client);

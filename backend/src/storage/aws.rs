@@ -12,7 +12,6 @@ pub struct FoodieAws {
     client: S3Client,
 }
 
-// TODO: Do not store auth here of course
 impl FoodieAws {
     pub async fn new() -> Self {
         let aws_url = dotenv::var("AWS_URL").expect("AWS_URL needed");
