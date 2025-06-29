@@ -73,4 +73,5 @@ pub enum Recipes {
     BakingTime,
     CreatedAt,
     UpdatedAt,
+    Visibility,
 }
