@@ -8,7 +8,7 @@ use thaw::*;
 
 use crate::components::loading::Loading;
 use crate::components::not_found::NotFound;
-use crate::context::auth::AuthContext;
+use crate::context::auth::AuthStore;
 use crate::context::toast::{use_toast, Toast, ToastType, ToasterTrait};
 use crate::views::recipe::recipe_image::RecipeImage;
 use crate::views::recipe::{format_ingredients, format_time, total_time};
@@ -79,6 +79,8 @@ fn Recipe(recipe: Recipe) -> impl IntoView {
 
 #[component]
 fn RecipeCard(recipe: Recipe) -> impl IntoView {
+    let state = expect_context::<AuthStore>();
+
     let _recipe = recipe.clone();
     let toast = use_toast().unwrap();
     let time = move || {
@@ -128,18 +130,23 @@ fn RecipeCard(recipe: Recipe) -> impl IntoView {
             <CardHeader>
                 <Body1>{recipe.name}</Body1>
                 <CardHeaderAction slot>
-                    <Menu position=MenuPosition::BottomEnd on_select=on_select>
-                        <MenuTrigger slot>
-                            <Button
-                                appearance=ButtonAppearance::Transparent
-                                icon=icondata::AiMoreOutlined
-                            />
-                        </MenuTrigger>
-                        <MenuItem value="edit">"Edit"</MenuItem>
-                        <MenuItem value="delete">"Delete"</MenuItem>
-                    </Menu>
-
-                    <Dialog open>
+                    {if state.id == recipe.user_id {
+                        view! {
+                            <Menu position=MenuPosition::BottomEnd on_select=on_select>
+                                <MenuTrigger slot>
+                                    <Button
+                                        appearance=ButtonAppearance::Transparent
+                                        icon=icondata::AiMoreOutlined
+                                    />
+                                </MenuTrigger>
+                                <MenuItem value="edit">"Edit"</MenuItem>
+                                <MenuItem value="delete">"Delete"</MenuItem>
+                            </Menu>
+                        }
+                            .into_any()
+                    } else {
+                        ().into_any()
+                    }} <Dialog open>
                         <DialogSurface>
                             <DialogBody>
                                 <DialogTitle>"Delete recipe"</DialogTitle>

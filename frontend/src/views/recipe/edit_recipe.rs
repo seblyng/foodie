@@ -1,4 +1,5 @@
 use crate::components::form::Form;
+use crate::context::auth::AuthStore;
 use crate::views::recipe::recipe_form::recipe_info::RecipeInfo;
 use crate::views::recipe::recipe_form::recipe_ingredients::RecipeIngredients;
 use crate::views::recipe::recipe_form::recipe_steps::RecipeSteps;
@@ -21,6 +22,8 @@ use crate::{
 
 #[component]
 pub fn EditRecipe() -> impl IntoView {
+    let state = expect_context::<AuthStore>();
+
     let params = use_params_map();
     let toast = use_toast().unwrap();
     let id = move || params.with(|params| params.get("id").unwrap_or_default());
@@ -37,9 +40,13 @@ pub fn EditRecipe() -> impl IntoView {
             .await
             .ok()?;
 
-        set_current_file(r.img.clone());
+        if r.user_id == state.id {
+            set_current_file(r.img.clone());
 
-        Some(RwSignal::new(CreateRecipe::from(r)))
+            Some(RwSignal::new(CreateRecipe::from(r)))
+        } else {
+            None
+        }
     });
 
     let _recipe = move || recipe.get().as_deref().map(|it| it.to_owned());

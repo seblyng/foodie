@@ -21,13 +21,13 @@ fn Profile() -> impl IntoView {
                             spawn_local(async move {
                                 post("/api/logout").send().await.unwrap();
                                 nav("/", Default::default());
-                                auth.set(Some(false));
+                                auth.set(Some(None));
                             });
                         } else {
                             nav("/profile", Default::default());
                         }
                     };
-                    if _auth {
+                    if _auth.is_some() {
                         view! {
                             <Menu on_select position=MenuPosition::BottomEnd>
                                 <MenuTrigger slot>

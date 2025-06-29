@@ -77,7 +77,7 @@ impl App {
             .layer(HandleErrorLayer::new(|_| async {
                 StatusCode::UNAUTHORIZED
             }))
-            .layer(AuthManagerLayerBuilder::new(backend.clone(), session_layer.clone()).build());
+            .layer(AuthManagerLayerBuilder::new(backend, session_layer).build());
 
         let aws = storage::aws::FoodieAws::new().await;
         let app_state = AppState { db, storage: aws };
@@ -132,7 +132,7 @@ impl App {
                             .route("/google/callback", get(google_callback)),
                     ),
             )
-            .with_state(app_state.clone())
+            .with_state(app_state)
             .layer(auth_service)
             .layer(CatchPanicLayer::new())
             .layer(cors);

@@ -1,7 +1,10 @@
 use leptos::prelude::*;
 use leptos_router::{components::Redirect, hooks::use_location};
 
-use crate::{components::loading::Loading, context::auth::AuthContext};
+use crate::{
+    components::loading::Loading,
+    context::auth::{AuthContext, AuthStore},
+};
 
 macro_rules! public_route {
     ($component:tt) => {
@@ -39,10 +42,18 @@ pub fn PrivateRoute(children: ChildrenFn) -> impl IntoView {
         {move || {
             match auth.get() {
                 Some(auth) => {
-                    if auth {
+                    if let Some(auth) = auth {
+                        let store = AuthStore {
+                            id: auth.id,
+                            name: auth.name,
+                            email: auth.email,
+                        };
+                        provide_context(store);
                         children().into_any()
                     } else {
-                        view! { <Redirect path="/login" /> }.into_any()
+
+                        view! { <Redirect path="/login" /> }
+                            .into_any()
                     }
                 }
                 None => view! { <Loading /> }.into_any(),
@@ -60,7 +71,13 @@ pub fn PublicRoute(children: ChildrenFn) -> impl IntoView {
         {move || {
             match auth.get() {
                 Some(auth) => {
-                    if auth {
+                    if let Some(auth) = auth {
+                        let store = AuthStore {
+                            id: auth.id,
+                            name: auth.name,
+                            email: auth.email,
+                        };
+                        provide_context(store);
                         if location.pathname.get() == "/login" {
                             return view! { <Redirect path="/" /> }.into_any();
                         }
@@ -69,7 +86,11 @@ pub fn PublicRoute(children: ChildrenFn) -> impl IntoView {
                         children().into_any()
                     }
                 }
-                None => view! { <Loading /> }.into_any(),
+                None => {
+
+                    view! { <Loading /> }
+                        .into_any()
+                }
             }
         }}
     }
