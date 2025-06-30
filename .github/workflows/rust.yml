@@ -82,4 +82,14 @@ jobs:
           username: ${{ secrets.USERNAME }}
           key: ${{ secrets.KEY }}
           port: ${{ secrets.PORT }}
-          script: cd projects/foodie && git pull && ./deploy
+          script: |
+            export GOOGLE_CLIENT_ID="${{ secrets.GOOGLE_CLIENT_ID }}"
+            export GOOGLE_CLIENT_SECRET="${{ secrets.GOOGLE_CLIENT_ID }}"
+            export DATABASE_URL="${{ secrets.GOOGLE_CLIENT_ID }}"
+            export AWS_USER="${{ secrets.GOOGLE_CLIENT_ID }}"
+            export AWS_PASSWORD="${{ secrets.GOOGLE_CLIENT_ID }}"
+            export REDIS_URL="${{ secrets.GOOGLE_CLIENT_ID }}"
+
+            cd projects/foodie
+            git pull
+            ./deploy
