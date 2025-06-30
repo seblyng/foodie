@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# TODO(seb): Fix this. It is not migrating since this is running from host
+# and I am using the postgres hostname to access the DB
 (cd backend && sea-orm-cli migrate)
 docker compose -f .docker/docker-compose-prod.yml build
 docker compose -f .docker/docker-compose-prod.yml up -d

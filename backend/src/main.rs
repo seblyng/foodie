@@ -5,10 +5,9 @@ use sea_orm::{ConnectOptions, Database};
 async fn main() -> Result<(), anyhow::Error> {
     let opt = ConnectOptions::new(dotenv::var("DATABASE_URL")?);
     let db = Database::connect(opt).await?;
-    // TODO: Maybe not use 0.0.0.0 per zero2prod book
     let session_store = RedisStore::new(dotenv::var("REDIS_URL")?).await?;
     let app = App::new(db, session_store).await?;
-    let listener = tokio::net::TcpListener::bind("0.0.0.0:42069")
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:42069")
         .await
         .expect("Failed to bind to port");
     println!("Server running on {}", listener.local_addr()?);

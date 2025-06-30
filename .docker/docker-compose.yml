@@ -1,49 +1,10 @@
 services:
-  # foodie_frontend:
-  #   container_name: foodie_frontend
-  #   hostname: foodie_frontend
-  #   tty: true
-  #   build:
-  #     context: ../frontend
-  #     dockerfile: .docker/Dockerfile
-  #   restart: always
-  #   volumes:
-  #     - ../frontend:/app
-  #   network_mode: host
-  #   # ports:
-  #   #   - "8080:8080"
-  #   depends_on:
-  #     - foodie_backend
-
-  # foodie_backend:
-  #   container_name: foodie_backend
-  #   hostname: foodie_backend
-  #   build:
-  #     context: ../backend
-  #     dockerfile: .docker/Dockerfile
-  #   restart: always
-  #   depends_on:
-  #     - postgres
-  #   tty: true
-  #   ports:
-  #     - "5000:5000"
-  #   volumes:
-  #     - ../backend/src:/app/src
-  #     - ../backend/migrations:/app/migrations
-  #     - ../.db/filestorage:/.filestorage
-  #     - ../backend/Cargo.toml:/app/Cargo.toml
-  #   environment:
-  #     - FOODIE_SECRET_KEY=$FOODIE_SECRET_KEY
-  #     - POSTGRES_HOST=foodie_postgres:5432
-  #     - POSTGRES_USER=postgres
-  #     - POSTGRES_PASSWORD=postgres
-  #     - DATABASE_URL=postgres://postgres:postgres@foodie_postgres:5432
   redis:
     image: redis:latest
     hostname: foodie_redis
     container_name: foodie_redis
     ports:
-      - "6379:6379"
+      - "127.0.0.1:6379:6379"
     volumes:
       - ../redis.conf:/etc/redis/redis.conf
       - ../.db/foodie_redis:/data
@@ -57,7 +18,7 @@ services:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5432:5432"
     volumes:
       - ../.db/foodie_db:/var/lib/postgresql/data
 
@@ -65,8 +26,8 @@ services:
     image: quay.io/minio/minio
     container_name: minio
     ports:
-      - "9000:9000" # S3-compatible API
-      - "9001:9001" # Web console
+      - "127.0.0.1:9000:9000" # S3-compatible API
+      - "127.0.0.1:9001:9001" # Web console
     volumes:
       - ../.db/aws:/data
     environment:

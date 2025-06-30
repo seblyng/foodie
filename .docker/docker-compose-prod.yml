@@ -12,7 +12,7 @@ services:
     volumes:
       - ../frontend:/app
     ports:
-      - "4000:80"
+      - "127.0.0.1:4000:80"
     # depends_on:
     #   - foodie_backend
 
@@ -29,7 +29,7 @@ services:
       - postgres
     tty: true
     ports:
-      - "42069:42069"
+      - "127.0.0.1:42069:42069"
     volumes:
       - ../backend/src:/app/src
       - ../backend/migrations:/app/migrations
@@ -54,7 +54,7 @@ services:
     hostname: foodie_redis
     container_name: foodie_redis
     ports:
-      - "6379:6379"
+      - "127.0.0.1:6379:6379"
     volumes:
       - ../redis.conf:/etc/redis/redis.conf
       - ../.db/foodie_redis:/data
@@ -70,7 +70,7 @@ services:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5432:5432"
     volumes:
       - ../.db/foodie_db:/var/lib/postgresql/data
 
@@ -81,8 +81,8 @@ services:
     container_name: foodie_minio
     hostname: foodie_minio
     ports:
-      - "9000:9000" # S3-compatible API
-      - "9001:9001" # Web console
+      - "127.0.0.1:9000:9000" # S3-compatible API
+      - "127.0.0.1:9001:9001" # Web console
     volumes:
       - ../.db/aws:/data
     environment:
