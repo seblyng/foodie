@@ -83,6 +83,8 @@ jobs:
       - name: Load Credentials
         id: load-credentials
         uses: 1password/load-secrets-action@v2
+        with:
+          export-env: false
         env:
           DATABASE_URL: op://foodie-production/DATABASE_URL/password
 
