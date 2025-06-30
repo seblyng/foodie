@@ -75,6 +75,17 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Configure 1Password Service Account
+        uses: 1password/load-secrets-action/configure@v2
+        with:
+          service-account-token: ${{ secrets.OP_SERVICE_ACCOUNT_TOKEN }}
+
+      - name: Load Credentials
+        id: load-credentials
+        uses: 1password/load-secrets-action@v2
+        env:
+          DATABASE_URL: op://foodie-production/DATABASE_URL/password
+
       - name: Deploy foodie
         uses: appleboy/ssh-action@v1.0.3
         with:
@@ -84,11 +95,11 @@ jobs:
           port: ${{ secrets.PORT }}
           script: |
             export GOOGLE_CLIENT_ID="${{ secrets.GOOGLE_CLIENT_ID }}"
-            export GOOGLE_CLIENT_SECRET="${{ secrets.GOOGLE_CLIENT_ID }}"
-            export DATABASE_URL="${{ secrets.GOOGLE_CLIENT_ID }}"
-            export AWS_USER="${{ secrets.GOOGLE_CLIENT_ID }}"
-            export AWS_PASSWORD="${{ secrets.GOOGLE_CLIENT_ID }}"
-            export REDIS_URL="${{ secrets.GOOGLE_CLIENT_ID }}"
+            export GOOGLE_CLIENT_SECRET="${{ secrets.GOOGLE_CLIENT_SECRET }}"
+            export DATABASE_URL="${{ steps.load-credentials.outputs.DATABASE_URL }}"
+            export AWS_USER="${{ secrets.AWS_USER }}"
+            export AWS_PASSWORD="${{ secrets.AWS_PASSWORD }}"
+            export REDIS_URL="${{ secrets.REDIS_URL }}"
 
             cd projects/foodie
             git pull
