@@ -4,7 +4,10 @@ use crate::{
         friends::{accept_friendship, get_pending, reject_friendship, send_friend_request},
         ingredient::{delete_ingredient, get_ingredient, get_ingredients, post_ingredient},
         oauth::{google_callback, google_login},
-        recipe::{delete_recipe, get_recipe, get_recipes, post_recipe, update_recipe},
+        recipe::{
+            delete_recipe, get_presigned_url_for_upload, get_recipe, get_recipes, post_recipe,
+            update_recipe,
+        },
         users::get_users,
     },
     auth_backend::{get_oauth_client, Backend},
@@ -118,6 +121,7 @@ impl App {
                                 get(get_ingredient).delete(delete_ingredient),
                             ),
                     )
+                    .route("/uploads/recipes/images", get(get_presigned_url_for_upload))
                     .route("/users", get(get_users))
                     .route("/me", get(get_me))
                     .route_layer(login_required!(Backend))

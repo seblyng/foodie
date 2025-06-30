@@ -13,7 +13,7 @@ pub async fn try_upload_image(file: Option<File>) -> Result<Option<Uuid>, anyhow
         return Ok(None);
     };
 
-    let image = match get("/api/recipes/image").send().await {
+    let image = match get("/api/uploads/recipes/images").send().await {
         Ok(res) if res.ok() => res.json::<RecipeImage>().await?,
         _ => {
             return Err(anyhow::anyhow!("Couldn't upload file"));
