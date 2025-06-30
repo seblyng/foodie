@@ -93,6 +93,7 @@ jobs:
           AWS_USER: op://foodie-production/AWS_USER/password
           AWS_PASSWORD: op://foodie-production/AWS_PASSWORD/password
           REDIS_URL: op://foodie-production/REDIS_URL/password
+          ALLOWED_MAILS: op://foodie-production/ALLOWED_MAILS/password
 
       - name: Deploy foodie
         uses: appleboy/ssh-action@v1.0.3
@@ -109,6 +110,7 @@ jobs:
             export AWS_USER="${{ steps.load-credentials.outputs.AWS_USER }}"
             export AWS_PASSWORD="${{ steps.load-credentials.outputs.AWS_PASSWORD }}"
             export REDIS_URL="${{ steps.load-credentials.outputs.REDIS_URL }}"
+            export ALLOWED_MAILS="${{ steps.load-credentials.outputs.ALLOWED_MAILS }}"
 
             cd projects/foodie
             git pull
