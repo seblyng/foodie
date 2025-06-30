@@ -10,7 +10,7 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  frontend-build:
+  frontend:
     runs-on: ubuntu-latest
 
     steps:
@@ -24,21 +24,7 @@ jobs:
         working-directory: frontend
         run: cargo build
 
-  backend-build:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
-
-      - name: Setup Rust
-        uses: ./.github/actions/setup_rust
-
-      - name: Build backend
-        working-directory: backend
-        run: cargo build
-
-  backend-test:
-    needs: backend-build
+  backend:
     runs-on: ubuntu-latest
 
     services:
@@ -65,6 +51,10 @@ jobs:
       - name: Setup Rust
         uses: ./.github/actions/setup_rust
 
+      - name: Build backend
+        working-directory: backend
+        run: cargo build
+
       - name: Run tests in backend
         working-directory: backend
         run: cargo test
@@ -81,7 +71,7 @@ jobs:
 
   deploy:
     if: github.ref == 'refs/heads/master'
-    needs: [backend-test, backend-build, frontend-build]
+    needs: [backend, frontend]
     runs-on: ubuntu-latest
 
     steps:
