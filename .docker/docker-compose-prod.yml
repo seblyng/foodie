@@ -52,7 +52,7 @@ services:
     hostname: foodie_migration
     build:
       context: ../
-      dockerfile: backend/.docker/Dockerfile.migration.prod
+      dockerfile: backend/.docker/Dockerfile.migrations.prod
     depends_on:
       - postgres
     tty: true
