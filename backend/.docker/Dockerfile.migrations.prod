@@ -9,5 +9,5 @@ RUN cargo build --release
 FROM debian:bookworm-slim AS runtime
 WORKDIR /app
 RUN apt-get update && apt install -y openssl ca-certificates
-COPY --from=builder /app/target/release/backend /usr/local/bin
+COPY --from=builder /app/target/release/migration /usr/local/bin
 ENTRYPOINT ["/usr/local/bin/migration"]
