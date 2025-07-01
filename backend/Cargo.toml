@@ -23,7 +23,7 @@ tokio = { version = "1.24.1", features = ["full"] }
 env_logger = "0.11.0"
 log = "0.4.17"
 futures-util = "0.3.31"
-axum = "0.8.1"
+axum = { version = "0.8.1", features = ["ws"] }
 argon2 = "0.5.2"
 rand = { version = "0.8.5", features = ["min_const_gen"] }
 aws-sdk-s3 = "1.15.0"
@@ -37,7 +37,6 @@ itertools = "0.14.0"
 sea-orm = { version = "1.1.12", features = ["sqlx-postgres", "runtime-tokio-native-tls", "macros"] }
 async-trait = "0.1.74"
 tower = "0.5.0"
-bytes = "1.5.0"
 uuid = { version = "1.7.0", features = ["v4"] }
 tower-sessions-core = "0.14.0"
 fred = "10.1.0"

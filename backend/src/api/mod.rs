@@ -4,6 +4,7 @@ pub mod ingredient;
 pub mod oauth;
 pub mod recipe;
 pub mod users;
+pub mod websocket;
 
 pub fn allowed_mails() -> Vec<String> {
     dotenv::var("ALLOWED_MAILS")

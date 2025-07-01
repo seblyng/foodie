@@ -1,6 +1,9 @@
 use crate::components::not_found::NotFound;
 use crate::views::recipe::recipe_image::RecipeImage;
 use crate::views::recipe::{format_ingredients, format_time, total_time};
+use codee::string::FromToStringCodec;
+use common::websocket::FoodieMessageType;
+use leptos_use::{use_websocket, UseWebSocketReturn};
 use std::time::Duration;
 use thaw::*;
 
@@ -30,6 +33,18 @@ pub fn Recipes() -> impl IntoView {
                 None
             }
         }
+    });
+
+    let UseWebSocketReturn { message, .. } =
+        use_websocket::<String, FoodieMessageType, FromToStringCodec>("/api/ws");
+
+    Effect::new(move || match message() {
+        Some(m) => match m {
+            FoodieMessageType::RecipeDelete => recipes.refetch(),
+            FoodieMessageType::RecipeCreate => recipes.refetch(),
+            FoodieMessageType::FriendRequest => (),
+        },
+        None => {}
     });
 
     let _recipes = move || recipes.get().map(|it| it.as_deref().map(|r| r.to_vec()));

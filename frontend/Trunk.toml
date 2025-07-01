@@ -10,5 +10,9 @@ tailwindcss = "4.1.10"
 [[proxy]]
 backend = "http://localhost:42069/api/"
 
+[[proxy]]
+backend = "ws://localhost:42069/api/ws"
+ws = true
+
 [serve]
 addresses = ["0.0.0.0"]

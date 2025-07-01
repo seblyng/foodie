@@ -9,6 +9,7 @@ use crate::{
             update_recipe,
         },
         users::get_users,
+        websocket::websocket_handler,
     },
     auth_backend::{get_oauth_client, Backend},
     storage::{self, FoodieStorage},
@@ -17,7 +18,7 @@ use axum::{
     error_handling::HandleErrorLayer,
     extract::FromRef,
     http::{HeaderValue, StatusCode},
-    routing::{get, post},
+    routing::{any, get, post},
     Router,
 };
 use axum_login::{
@@ -25,9 +26,11 @@ use axum_login::{
     tower_sessions::{cookie::time::Duration, Expiry, SessionManagerLayer},
     AuthManagerLayerBuilder,
 };
+use common::websocket::FoodieMessageType;
 use hyper::{header::CONTENT_TYPE, Method};
 use sea_orm::DatabaseConnection;
 use std::sync::Once;
+use tokio::sync::broadcast;
 use tower::ServiceBuilder;
 use tower_http::{catch_panic::CatchPanicLayer, cors::CorsLayer};
 use tower_sessions_core::SessionStore;
@@ -39,6 +42,7 @@ where
 {
     pub db: DatabaseConnection,
     pub storage: T,
+    pub tx: broadcast::Sender<FoodieMessageType>,
 }
 
 impl<T> FromRef<AppState<T>> for DatabaseConnection
@@ -82,8 +86,9 @@ impl App {
             }))
             .layer(AuthManagerLayerBuilder::new(backend, session_layer).build());
 
-        let aws = storage::aws::FoodieAws::new().await;
-        let app_state = AppState { db, storage: aws };
+        let storage = storage::aws::FoodieAws::new().await;
+        let (tx, _) = broadcast::channel::<FoodieMessageType>(100);
+        let app_state = AppState { db, storage, tx };
 
         let cors = CorsLayer::new()
             .allow_methods([Method::GET, Method::POST, Method::PUT])
@@ -124,6 +129,7 @@ impl App {
                     .route("/uploads/recipes/images", get(get_presigned_url_for_upload))
                     .route("/users", get(get_users))
                     .route("/me", get(get_me))
+                    .route("/ws", any(websocket_handler))
                     .route_layer(login_required!(Backend))
                     .route("/health-check", get(|| async {}))
                     .route("/register", post(register))

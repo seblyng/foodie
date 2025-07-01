@@ -14,7 +14,10 @@ use axum::{
     response::IntoResponse,
     Json,
 };
-use common::recipe::{CreateRecipe, Recipe, RecipeImage, RecipeIngredient};
+use common::{
+    recipe::{CreateRecipe, Recipe, RecipeImage, RecipeIngredient},
+    websocket::FoodieMessageType,
+};
 use futures_util::{future::join_all, StreamExt};
 use hyper::Method;
 use sea_orm::{
@@ -26,7 +29,6 @@ use uuid::Uuid;
 // Creates a recipe. Dependant on that the ingredients are already created
 pub async fn post_recipe<T>(
     auth: AuthSession,
-    State(db): State<DatabaseConnection>,
     State(state): State<AppState<T>>,
     Json(recipe): Json<CreateRecipe>,
 ) -> Result<Json<Recipe>, ApiError>
@@ -35,9 +37,9 @@ where
 {
     let user = auth.user.unwrap();
 
-    let created_ingredients = create_ingredients(&recipe, user.id, &db).await?;
+    let created_ingredients = create_ingredients(&recipe, user.id, &state.db).await?;
 
-    let tx = db.begin().await?;
+    let tx = state.db.begin().await?;
 
     let created_recipe = recipes::Entity::insert(recipes::ActiveModel {
         id: NotSet,
@@ -72,9 +74,11 @@ where
 
     tx.commit().await?;
 
-    let ingredients = get_recipe_ingredients(&db, created_recipe.id).await?;
+    let ingredients = get_recipe_ingredients(&state.db, created_recipe.id).await?;
 
     let recipe_image = get_presigned_url_for_get(state.storage, created_recipe.img).await?;
+
+    let _ = state.tx.send(FoodieMessageType::RecipeCreate);
 
     Ok(Json(Recipe {
         id: created_recipe.id,
@@ -313,7 +317,6 @@ where
 
 pub async fn delete_recipe<T>(
     auth: AuthSession,
-    State(db): State<DatabaseConnection>,
     State(state): State<AppState<T>>,
     Path(recipe_id): Path<i32>,
 ) -> Result<impl IntoResponse, ApiError>
@@ -324,7 +327,7 @@ where
 
     let recipe = recipes::Entity::find_by_id(recipe_id)
         .filter(recipes::Column::UserId.eq(user.id))
-        .one(&db)
+        .one(&state.db)
         .await?;
 
     if let Some(recipe) = recipe {
@@ -335,8 +338,10 @@ where
 
     recipes::Entity::delete_by_id(recipe_id)
         .filter(recipes::Column::UserId.eq(user.id))
-        .exec(&db)
+        .exec(&state.db)
         .await?;
+
+    let _ = state.tx.send(FoodieMessageType::RecipeDelete);
 
     Ok(())
 }
