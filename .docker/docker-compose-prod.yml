@@ -13,8 +13,6 @@ services:
       - ../frontend:/app
     ports:
       - "127.0.0.1:4000:80"
-    # depends_on:
-    #   - foodie_backend
 
   foodie_backend:
     networks:
@@ -27,14 +25,14 @@ services:
     restart: always
     depends_on:
       - postgres
+      - foodie_migration
     tty: true
     ports:
       - "127.0.0.1:42069:42069"
     volumes:
       - ../backend/src:/app/src
-      - ../backend/migrations:/app/migrations
-      - ../.db/filestorage:/.filestorage
       - ../backend/Cargo.toml:/app/Cargo.toml
+      - ../.db/filestorage:/.filestorage
     environment:
       - DATABASE_URL=$DATABASE_URL
       - GOOGLE_CLIENT_ID=$GOOGLE_CLIENT_ID
@@ -46,6 +44,20 @@ services:
       - AWS_PASSWORD=$AWS_PASSWORD
       - ALLOWED_MAILS=$ALLOWED_MAILS
       - REDIS_URL=$REDIS_URL
+
+  foodie_migration:
+    networks:
+      - foodie-network
+    container_name: foodie_migration
+    hostname: foodie_migration
+    build:
+      context: ../
+      dockerfile: backend/.docker/Dockerfile.migration.prod
+    depends_on:
+      - postgres
+    tty: true
+    environment:
+      - DATABASE_URL=$DATABASE_URL
 
   redis:
     networks:
