@@ -82,7 +82,9 @@ pub fn CreateRecipe() -> impl IntoView {
     view! {
         <Form on_submit=on_submit>
             <RecipeInfo file=file current_file=current_file />
+            <Divider />
             <RecipeIngredients />
+            <Divider />
             <RecipeSteps />
 
             <Button appearance=ButtonAppearance::Primary button_type=ButtonType::Submit>

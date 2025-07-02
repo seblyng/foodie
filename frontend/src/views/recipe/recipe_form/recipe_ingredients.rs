@@ -34,6 +34,8 @@ pub fn RecipeIngredients() -> impl IntoView {
 
     view! {
         <FormGroup>
+            <FormFieldInput class="col-span-12 md:col-span-6" value=name placeholder="Name" />
+
             <FormFieldNumberInput
                 name="amount"
                 class="md:col-span-3 col-span-6"
@@ -55,7 +57,6 @@ pub fn RecipeIngredients() -> impl IntoView {
                 }}
             </FormFieldSelect>
 
-            <FormFieldInput class="col-span-12 md:col-span-6" value=name placeholder="Name" />
             <Button
                 class="col-span-12"
                 button_type=ButtonType::Button

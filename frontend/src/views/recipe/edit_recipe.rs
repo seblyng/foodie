@@ -104,7 +104,9 @@ pub fn EditRecipe() -> impl IntoView {
                             view! {
                                 <Form on_submit=on_submit>
                                     <RecipeInfo file=file current_file=current_file />
+                                    <Divider />
                                     <RecipeIngredients />
+                                    <Divider />
                                     <RecipeSteps />
 
                                     <Button
