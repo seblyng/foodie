@@ -78,7 +78,16 @@ where
 
     let recipe_image = get_presigned_url_for_get(state.storage, created_recipe.img).await?;
 
-    let _ = state.tx.send(FoodieMessageType::RecipeCreate);
+    let friends = fetch_user_relationships(&state.db, user.id, "")
+        .await?
+        .into_iter()
+        .filter(|it| it.status == Some(FriendshipStatus::Accepted.into()));
+
+    for friend in friends {
+        if let Some(tx) = state.connections.read().unwrap().get(&friend.id) {
+            let _ = tx.send(FoodieMessageType::RecipeCreate);
+        }
+    }
 
     Ok(Json(Recipe {
         id: created_recipe.id,
@@ -341,7 +350,16 @@ where
         .exec(&state.db)
         .await?;
 
-    let _ = state.tx.send(FoodieMessageType::RecipeDelete);
+    let friends = fetch_user_relationships(&state.db, user.id, "")
+        .await?
+        .into_iter()
+        .filter(|it| it.status == Some(FriendshipStatus::Accepted.into()));
+
+    for friend in friends {
+        if let Some(tx) = state.connections.read().unwrap().get(&friend.id) {
+            let _ = tx.send(FoodieMessageType::RecipeDelete);
+        }
+    }
 
     Ok(())
 }

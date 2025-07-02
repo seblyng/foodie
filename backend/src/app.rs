@@ -29,8 +29,11 @@ use axum_login::{
 use common::websocket::FoodieMessageType;
 use hyper::{header::CONTENT_TYPE, Method};
 use sea_orm::DatabaseConnection;
-use std::sync::Once;
-use tokio::sync::broadcast;
+use std::{
+    collections::HashMap,
+    sync::{Arc, Once, RwLock},
+};
+use tokio::sync::mpsc::UnboundedSender;
 use tower::ServiceBuilder;
 use tower_http::{catch_panic::CatchPanicLayer, cors::CorsLayer};
 use tower_sessions_core::SessionStore;
@@ -42,7 +45,7 @@ where
 {
     pub db: DatabaseConnection,
     pub storage: T,
-    pub tx: broadcast::Sender<FoodieMessageType>,
+    pub connections: Arc<RwLock<HashMap<i32, UnboundedSender<FoodieMessageType>>>>,
 }
 
 impl<T> FromRef<AppState<T>> for DatabaseConnection
@@ -87,8 +90,12 @@ impl App {
             .layer(AuthManagerLayerBuilder::new(backend, session_layer).build());
 
         let storage = storage::aws::FoodieAws::new().await;
-        let (tx, _) = broadcast::channel::<FoodieMessageType>(100);
-        let app_state = AppState { db, storage, tx };
+        let connections = Arc::new(RwLock::new(HashMap::new()));
+        let app_state = AppState {
+            db,
+            storage,
+            connections,
+        };
 
         let cors = CorsLayer::new()
             .allow_methods([Method::GET, Method::POST, Method::PUT])
