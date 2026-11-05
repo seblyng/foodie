@@ -20,10 +20,16 @@ jobs:
           gh release download minio-source-2025-09-07 \
             --pattern foodie-minio-source.tar.gz --dir /tmp/minio
           echo '040526791160975e4fc20cd156b9bf3aec3a71e00f435c4d8e5940cb57edee98  /tmp/minio/foodie-minio-source.tar.gz' | sha256sum --check
+          python3 - <<'PY'
+          import hashlib, json, tarfile
+          with tarfile.open('/tmp/minio/foodie-minio-source.tar.gz') as archive:
+              manifest = json.load(archive.extractfile('manifest.json'))
+              assert len(manifest) == 1
+              config = archive.extractfile(manifest[0]['Config']).read()
+              assert hashlib.sha256(config).hexdigest() == '69b2ec208575b69597784255eec6fa6a2985ee9e1a47f4411a51f7f5fdd193a9'
+          PY
           gzip -dc /tmp/minio/foodie-minio-source.tar.gz | docker load
-          test "$(docker image inspect quay.io/minio/minio --format '{{.Id}}')" = \
-            'sha256:69b2ec208575b69597784255eec6fa6a2985ee9e1a47f4411a51f7f5fdd193a9'
-          docker run --rm --network none --entrypoint minio quay.io/minio/minio --version
+          docker run --rm --pull never --network none --entrypoint minio quay.io/minio/minio --version
       - uses: docker/login-action@v3
         with:
           registry: ghcr.io
