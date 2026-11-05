@@ -1,7 +1,7 @@
 use std::fmt::Debug;
 
 use async_trait::async_trait;
-use redis::{aio::MultiplexedConnection, AsyncCommands, ExistenceCheck, SetExpiry};
+use redis::{aio::ConnectionManager, AsyncCommands, ExistenceCheck, SetExpiry};
 use time::OffsetDateTime;
 use tower_sessions_core::{
     session::{Id, Record},
@@ -9,15 +9,21 @@ use tower_sessions_core::{
 };
 
 /// A Redis session store.
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct RedisStore {
-    conn: MultiplexedConnection,
+    conn: ConnectionManager,
+}
+
+impl Debug for RedisStore {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("RedisStore").finish_non_exhaustive()
+    }
 }
 
 impl RedisStore {
     pub async fn new(connection_string: String) -> Result<Self, anyhow::Error> {
         let conn = redis::Client::open(connection_string)?
-            .get_multiplexed_async_connection()
+            .get_connection_manager()
             .await?;
 
         Ok(Self { conn })
@@ -28,7 +34,8 @@ impl RedisStore {
         record: &Record,
         existence: ExistenceCheck,
     ) -> session_store::Result<bool> {
-        let val = serde_json::to_string(&record).unwrap();
+        let val = serde_json::to_string(&record)
+            .map_err(|err| session_store::Error::Encode(err.to_string()))?;
 
         let opts = redis::SetOptions::default()
             .conditional_set(existence)
@@ -42,7 +49,7 @@ impl RedisStore {
             .clone()
             .set_options(record.id.to_string(), val, opts)
             .await
-            .unwrap();
+            .map_err(|err| session_store::Error::Backend(err.to_string()))?;
 
         Ok(res)
     }
@@ -69,17 +76,24 @@ impl SessionStore for RedisStore {
             .clone()
             .get::<String, Option<String>>(id)
             .await
-            .unwrap();
+            .map_err(|err| session_store::Error::Backend(err.to_string()))?;
 
         if let Some(data) = data {
-            Ok(Some(serde_json::from_str(&data).unwrap()))
+            let record = serde_json::from_str(&data)
+                .map_err(|err| session_store::Error::Decode(err.to_string()))?;
+            Ok(Some(record))
         } else {
             Ok(None)
         }
     }
 
     async fn delete(&self, session_id: &Id) -> session_store::Result<()> {
-        let _: () = self.conn.clone().del(session_id.to_string()).await.unwrap();
+        let _: () = self
+            .conn
+            .clone()
+            .del(session_id.to_string())
+            .await
+            .map_err(|err| session_store::Error::Backend(err.to_string()))?;
         Ok(())
     }
 }

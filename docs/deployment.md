@@ -30,6 +30,9 @@ maps. Brief application downtime during a release is expected. SIGTERM initiates
 graceful shutdown; Kubernetes bounds shutdown, including open sockets, to 30s.
 The existing `/api/health-check` checks HTTP responsiveness, not downstream
 database/Redis availability; functional checks are still needed after releases.
+The session store uses Redis's reconnecting connection manager, so a Redis Pod
+restart does not require restarting the backend. Connection/serialization errors
+are returned through the session-store interface rather than panicking.
 
 ## First deployment
 
@@ -161,6 +164,17 @@ substitute for Kubernetes schema validation or the first runtime verification.
 CI also runs a pinned kubeconform image for standard Kubernetes schemas. Custom
 resources require the installed ESO/Argo CD/cert-manager schemas during rollout;
 missing custom schemas are skipped by that offline CI check.
+
+CI also verifies session recovery after disconnecting Redis clients. To run that
+regression locally, use a dedicated disposable Redis server, then run from
+`backend`:
+
+```sh
+REDIS_TEST_URL=redis://127.0.0.1:16379/0 cargo test --locked --test redis_store -- --ignored
+```
+
+This test intentionally disconnects the selected server's other clients; it must
+not target production Redis.
 
 ## Operations, backups and rollback
 

@@ -41,7 +41,7 @@ uuid = { version = "1.7.0", features = ["v4"] }
 tower-sessions-core = "0.14.0"
 fred = "10.1.0"
 time = "0.3.41"
-redis = { version = "0.32.2", features = ["tokio-comp", "aio"] }
+redis = { version = "0.32.2", features = ["tokio-comp", "aio", "connection-manager"] }
 
 [dev-dependencies]
 sqlx = "0.8.3"
