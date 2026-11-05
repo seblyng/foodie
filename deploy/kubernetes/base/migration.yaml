@@ -7,6 +7,7 @@ metadata:
   name: migrate-unreleased
   annotations:
     argocd.argoproj.io/sync-wave: '10'
+    argocd.argoproj.io/compare-options: IgnoreExtraneous
 spec:
   backoffLimit: 1
   activeDeadlineSeconds: 600

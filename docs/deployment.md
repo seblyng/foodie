@@ -109,6 +109,8 @@ changes. A failed Job blocks the new backend rollout. Investigate its logs befor
 deleting the failed Job and resyncing. No Job TTL is set, so completed Jobs are not
 continuously recreated by Argo CD. Pruning is off; remove old Jobs and generated
 ConfigMaps manually once no running or rollback workload references them.
+Historical migration Jobs use `IgnoreExtraneous` so retaining completed rollback
+Jobs does not leave the Application permanently OutOfSync.
 
 ## Secrets
 
