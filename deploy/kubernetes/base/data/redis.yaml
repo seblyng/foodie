@@ -37,7 +37,8 @@ spec:
             # Match the source's RDB persistence for the initial migration.
             - |
               umask 077
-              { printf 'requirepass "%s"\n' "$REDIS_PASSWORD";
+              escaped_password="$(printf '%s' "$REDIS_PASSWORD" | sed 's/\\/\\\\/g; s/"/\\"/g')"
+              { printf 'requirepass "%s"\n' "$escaped_password";
                 printf 'dir /data\nsave 60 1\nappendonly no\n';
               } > /tmp/redis.conf
               exec redis-server /tmp/redis.conf

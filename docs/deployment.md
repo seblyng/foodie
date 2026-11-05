@@ -109,7 +109,7 @@ Create/update the following without putting values in Git:
 | `DATABASE_URL` | `postgres://<url-encoded-user>:<url-encoded-password>@postgres.foodie.svc.cluster.local:5432/<database>` |
 | `POSTGRES_DB` | Existing application's database name |
 | `POSTGRES_USER`, `POSTGRES_PASSWORD` | Target database owner credentials, matching DATABASE_URL |
-| `REDIS_PASSWORD` | Random alphanumeric password (avoids config quoting/URL escaping ambiguity) |
+| `REDIS_PASSWORD` | Strong random password; URL-encode it in REDIS_URL |
 | `REDIS_URL` | `redis://:<same-password>@redis.foodie.svc.cluster.local:6379/0` |
 | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | Existing Google OAuth credentials |
 | `AWS_USER`, `AWS_PASSWORD` | Existing MinIO credentials, preserved during migration |
