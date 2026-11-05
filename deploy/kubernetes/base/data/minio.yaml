@@ -30,8 +30,8 @@ spec:
       terminationGracePeriodSeconds: 60
       containers:
         - name: minio
-          # Exact source version: preserve the on-disk format during migration.
-          image: quay.io/minio/minio@sha256:14cea493d9a34af32f524e538b8346cf79f3321eff8e708c1e2960462bd8936e
+          # Exact source image, mirrored because upstream is no longer public.
+          image: ghcr.io/seblyng/foodie-minio@sha256:a16cad481969d7ddb6fcd2f1c58284af3d1266190b9bedc3ef0801aeb05a93a9
           args: [server, /data, '--console-address', ':9001']
           env:
             - name: MINIO_ROOT_USER

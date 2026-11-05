@@ -114,8 +114,10 @@ sudo rsync -a --chown=999:999 .db/foodie_redis/ /var/lib/foodie/redis/
 sudo chmod 0700 /var/lib/foodie/minio /var/lib/foodie/redis
 ```
 
-The raw MinIO copy is valid here because the pinned target is the **same image
-digest** as the stopped source. Include hidden files and metadata. If the source
+The raw MinIO copy is valid here because the pinned GHCR target contains the
+**same verified image configuration and layers** as the stopped source. The
+mirror workflow verifies the original config digest before publishing. Include
+hidden files and metadata. If the source
 image has changed since preparation, reassess compatibility or use a verified S3
 object migration instead. Redis is also pinned to its source image. Inspect its
 files for RDB vs AOF configuration: the target intentionally starts with RDB
