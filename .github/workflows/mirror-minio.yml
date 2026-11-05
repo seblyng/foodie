@@ -3,7 +3,8 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  # Reading draft release assets requires repository push access.
+  contents: write
   packages: write
 
 jobs:
