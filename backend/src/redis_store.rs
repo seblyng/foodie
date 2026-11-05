@@ -1,7 +1,10 @@
-use std::fmt::Debug;
+use std::{fmt::Debug, time::Duration};
 
 use async_trait::async_trait;
-use redis::{aio::ConnectionManager, AsyncCommands, ExistenceCheck, SetExpiry};
+use redis::{
+    aio::{ConnectionManager, ConnectionManagerConfig},
+    AsyncCommands, ExistenceCheck, SetExpiry,
+};
 use time::OffsetDateTime;
 use tower_sessions_core::{
     session::{Id, Record},
@@ -22,8 +25,23 @@ impl Debug for RedisStore {
 
 impl RedisStore {
     pub async fn new(connection_string: String) -> Result<Self, anyhow::Error> {
+        // Pod replacement can leave an established TCP flow black-holed rather
+        // than closed. Bound both commands and reconnect attempts so the
+        // manager detects that failure and establishes a fresh connection.
+        let tcp_settings = redis::io::tcp::TcpSettings::default().set_keepalive(
+            redis::io::tcp::socket2::TcpKeepalive::new()
+                .with_time(Duration::from_secs(3))
+                .with_interval(Duration::from_secs(1)),
+        );
+        #[cfg(target_os = "linux")]
+        let tcp_settings = tcp_settings.set_user_timeout(Duration::from_secs(3));
+        let config = ConnectionManagerConfig::new()
+            .set_response_timeout(Duration::from_secs(3))
+            .set_connection_timeout(Duration::from_secs(3))
+            .set_max_delay(1000)
+            .set_tcp_settings(tcp_settings);
         let conn = redis::Client::open(connection_string)?
-            .get_connection_manager()
+            .get_connection_manager_with_config(config)
             .await?;
 
         Ok(Self { conn })

@@ -32,7 +32,9 @@ The existing `/api/health-check` checks HTTP responsiveness, not downstream
 database/Redis availability; functional checks are still needed after releases.
 The session store uses Redis's reconnecting connection manager, so a Redis Pod
 restart does not require restarting the backend. Connection/serialization errors
-are returned through the session-store interface rather than panicking.
+are returned through the session-store interface rather than panicking. Command
+and connection timeouts, TCP keepalive, and Linux TCP_USER_TIMEOUT bound failures
+when a replaced Pod leaves an old Service connection unresponsive.
 
 ## First deployment
 
