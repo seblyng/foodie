@@ -47,6 +47,13 @@ WASM frontend image. Backend/migration use Rust 1.94.0, the frontend app uses it
 existing `nightly-2025-08-01`, and Trunk is pinned. Cargo uses committed lockfiles.
 Container build context excludes data, environment files, `.aws`, Git and targets.
 
+The legacy MinIO release disappeared from its public registries during migration.
+`Mirror legacy MinIO` bootstraps a GHCR copy of the exact cached image using the
+`minio-source-2025-09-07` draft release asset. The workflow verifies both the
+archive checksum and original image ID before publishing; it contains no runtime
+credentials or application data. Keep that recovery asset available. Subsequent
+deployments pull the digest-pinned GHCR image directly.
+
 After successful CI on `master`, `Publish release` builds three `linux/amd64`
 images using the tested source SHA:
 
