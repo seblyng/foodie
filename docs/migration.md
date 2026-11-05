@@ -1,8 +1,23 @@
 # Compose → k3s migration runbook
 
-These steps change production and are deliberately manual. They have **not** been
-executed as part of preparing the local deployment configuration. Run commands
-from the indicated repository and keep a maintenance window for final cutover.
+## Deployment status
+
+The migration completed on **2026-11-05**. Production is at
+`https://foodie.lyngwinther.com`, managed by Argo CD's production overlay with
+automatic sync and self-healing. Pruning is disabled.
+
+The original Compose data and containers are retained for rollback. The Foodie
+containers are stopped with restart policies disabled. Cutover backups are in
+`~/foodie-migration-backup-20261105-cutover/`; earlier verified backups are in
+`~/foodie-migration-backup-20261105/`. These are local backups; encrypted off-host
+backup scheduling still needs a chosen destination. A pre-existing missing
+recipe image reference is recorded in the private earlier backup inventory.
+
+The procedure below is retained for recovery/reference, not for rerunning against
+live production. Before bootstrapping a fresh recovery, disable automatic sync
+on the Foodie Application and set its path to `overlays/data-only`; the checked-in
+normal configuration now starts production automatically. Restore commands use
+`--clean` and must only target the intended fresh/stopped database.
 
 ## 1. Inventory and preserve the source
 

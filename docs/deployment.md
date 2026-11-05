@@ -38,12 +38,14 @@ when a replaced Pod leaves an old Service connection unresponsive.
 
 ## First deployment
 
-Follow [migration.md](migration.md) before syncing production. The checked-in
-Argo CD Application starts with `overlays/data-only` and automatic sync disabled.
-Production image references deliberately start as `unreleased`: the first image
-publication/release PR must replace them before production is synced.
-After that PR is merged, render production and run the manifest checker with
-`--require-release` to reject any remaining unpublished image references.
+The migration completed on 2026-11-05. The checked-in Argo CD Application uses
+`overlays/production`, automatic sync and self-healing, with pruning disabled.
+Production image references are pinned by digest.
+
+For a fresh recovery, follow [migration.md](migration.md): first disable
+application automatic sync and change its source to `overlays/data-only`, then
+restore and verify data before switching back to production. Render production
+and run the manifest checker with `--require-release` before the first rollout.
 
 ## Images and releases
 
@@ -87,10 +89,10 @@ Repository setup, when you are ready to publish:
    public; private repositories require separate read-only credentials.
 5. Review migrations and merge the release PR.
 
-After initial cutover, enable automated sync with `prune: false, selfHeal: true`
-in `~/plex-docker/bootstrap/applications/foodie.yaml`, then apply the bootstrap
-Application definition. Bootstrap definitions are manually managed in this
-cluster. Keep auto-sync disabled until the migration runbook is complete.
+Automated sync with `prune: false, selfHeal: true` is enabled in
+`~/plex-docker/bootstrap/applications/foodie.yaml`. Bootstrap definitions remain
+manually managed in this cluster. Disable application auto-sync during a fresh
+data restore, re-enabling it only after verification.
 
 Sync ordering within the Foodie Application:
 

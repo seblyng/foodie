@@ -9,7 +9,7 @@ Will probably never finish it, but fun to play around with Leptos and Rust in ge
 
 ## Deployment
 
-Production targets the existing k3s/Argo CD cluster at
+Production runs on the k3s/Argo CD cluster at
 `https://foodie.lyngwinther.com`. See [deployment and releases](docs/deployment.md)
 and the [Compose-to-Kubernetes migration runbook](docs/migration.md).
 
