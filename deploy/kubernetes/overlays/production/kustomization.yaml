@@ -14,13 +14,13 @@ configMapGenerator:
 images:
   - name: foodie-backend
     newName: ghcr.io/seblyng/foodie-backend
-    digest: sha256:758d7f4314d8f12544b171cc2c620904f0f74f955c3480ed9c58fbfab9098483
+    digest: sha256:c7f54eb42fadb2e4fdb0089c03d88b56ab27f93d4e6f13c59e431b8c52cae1da
   - name: foodie-frontend
     newName: ghcr.io/seblyng/foodie-frontend
-    digest: sha256:1a346078ad1827e85053f89a87ac518a834dfc3bd85994c1443a30a224626b70
+    digest: sha256:f553e2f4b1dcab7426f0e33ea347a0805298df1c3a4335d772015edf1b7d90ef
   - name: foodie-migration
     newName: ghcr.io/seblyng/foodie-migration
-    digest: sha256:55a1599fc2ab3e7d2f92d11579ecc73b300c6412b78cc4e3b43a1a9133c27f99
+    digest: sha256:883e04c5806b49bc92ff5cffa357367546a58375674b0d6ec1640cba20a22347
 patches:
   - target:
       kind: Job
@@ -28,4 +28,4 @@ patches:
     patch: |-
       - op: replace
         path: /metadata/name
-        value: migrate-bfbbf6752066
+        value: migrate-58384a775a6b
