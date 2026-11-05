@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
 """Set the three verified image digests and the release-specific migration Job."""
 import argparse
+import io
 import pathlib
 import re
 
-import yaml
+from ruamel.yaml import YAML
+from ruamel.yaml.scalarstring import LiteralScalarString
 
 
 def main():
@@ -17,8 +19,12 @@ def main():
     if not re.fullmatch(r"[0-9a-f]{40}", release):
         raise SystemExit("Release must be a full Git SHA")
     path = pathlib.Path(__file__).resolve().parents[1] / "deploy/kubernetes/overlays/production/kustomization.yaml"
-    config = yaml.safe_load(path.read_text())
-    images = []
+    yaml = YAML()
+    yaml.preserve_quotes = True
+    yaml.indent(mapping=2, sequence=4, offset=2)
+    yaml.width = 4096  # Keep immutable image references on a single line.
+    config = yaml.load(path.read_text())
+    images = {image["name"]: image for image in config["images"]}
     for component in ("backend", "frontend", "migration"):
         reference = (pathlib.Path(artifact_dir) / f"{component}.txt").read_text().strip()
         match = re.fullmatch(
@@ -26,12 +32,16 @@ def main():
         )
         if not match:
             raise SystemExit(f"Invalid immutable image reference for {component}")
-        images.append({"name": f"foodie-{component}", "newName": match[1], "digest": match[2]})
-    config["images"] = images
-    config["patches"][0]["patch"] = (
-        "- op: replace\n  path: /metadata/name\n  value: migrate-" + release[:12] + "\n"
+        image = images[f"foodie-{component}"]
+        image["newName"] = match[1]
+        image.pop("newTag", None)
+        image["digest"] = match[2]
+    config["patches"][0]["patch"] = LiteralScalarString(
+        "- op: replace\n  path: /metadata/name\n  value: migrate-" + release[:12]
     )
-    output = yaml.safe_dump(config, sort_keys=False)
+    stream = io.StringIO()
+    yaml.dump(config, stream)
+    output = stream.getvalue()
     if args.dry_run:
         print(output, end="")
     else:

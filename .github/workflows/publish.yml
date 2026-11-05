@@ -91,7 +91,7 @@ jobs:
           pattern: image-*
           merge-multiple: true
           path: /tmp/release
-      - run: python3 -m pip install PyYAML==6.0.3
+      - run: python3 -m pip install PyYAML==6.0.3 ruamel.yaml==0.18.16
       - name: Update production release
         env:
           RELEASE: ${{ github.event.workflow_run.head_sha }}

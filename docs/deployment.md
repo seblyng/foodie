@@ -136,6 +136,8 @@ rotate that role in PostgreSQL as well and update DATABASE_URL together.
 ## Local validation
 
 Requires Docker, kubectl and Python with PyYAML (CI uses 6.0.3).
+The release updater also uses ruamel.yaml 0.18.16 to preserve YAML comments,
+indentation and block scalars, keeping release PRs limited to version changes.
 
 ```sh
 kubectl kustomize deploy/kubernetes/overlays/data-only > /tmp/foodie-data.yaml
