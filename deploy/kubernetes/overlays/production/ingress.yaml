@@ -1,0 +1,31 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: foodie
+  annotations:
+    argocd.argoproj.io/sync-wave: '30'
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    traefik.ingress.kubernetes.io/router.tls: 'true'
+spec:
+  ingressClassName: traefik
+  tls:
+    - hosts: [foodie.lyngwinther.com]
+      secretName: foodie-ingress-tls
+  rules:
+    - host: foodie.lyngwinther.com
+      http:
+        paths:
+          - path: /api
+            pathType: Prefix
+            backend:
+              service: { name: backend, port: { name: http } }
+          # Bucket name is "aws". Do not strip the prefix or rewrite Host:
+          # both are included in the browser's S3 presigned request signature.
+          - path: /aws
+            pathType: Prefix
+            backend:
+              service: { name: minio, port: { name: s3 } }
+          - path: /
+            pathType: Prefix
+            backend:
+              service: { name: frontend, port: { name: http } }

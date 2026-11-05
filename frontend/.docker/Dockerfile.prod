@@ -1,40 +1,28 @@
-FROM ubuntu:latest AS chef
-
+FROM rust:1.94.0-bookworm AS builder
+ARG CARGO_BUILD_JOBS=2
+ENV CARGO_BUILD_JOBS=${CARGO_BUILD_JOBS}
 WORKDIR /app
+RUN apt-get update && apt-get install -y --no-install-recommends clang lld \
+    && rm -rf /var/lib/apt/lists/*
+RUN cargo install trunk --version 0.21.14 --locked
 
-RUN apt update -y
-RUN apt upgrade -y
-
-RUN apt install -y build-essential binaryen curl
-RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
-RUN apt install -y nodejs
-
-RUN curl https://sh.rustup.rs -sSf | sed 's#/proc/self/exe#\/bin\/sh#g' | sh -s -- -y
-ENV PATH "$PATH:/root/.cargo/bin"
-
-RUN rustup target add wasm32-unknown-unknown
-RUN curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash
-RUN cargo binstall trunk --no-confirm
-
-COPY common/Cargo.toml common/Cargo.lock ../common/
-COPY common/src ../common/src
-
-# TODO: Should ideally use some .dockerignore or something
-COPY frontend/Cargo.lock ./Cargo.lock
-COPY frontend/Cargo.toml ./Cargo.toml
-COPY frontend/Trunk.toml ./Trunk.toml
-COPY frontend/index.html ./index.html
-COPY frontend/input.css ./input.css
+COPY common/Cargo.toml common/Cargo.lock /common/
+COPY common/src /common/src
+COPY frontend/rust-toolchain.toml ./
+RUN rustup toolchain install nightly-2025-08-01 --profile minimal \
+    --target wasm32-unknown-unknown
+COPY frontend/Cargo.toml frontend/Cargo.lock frontend/Trunk.toml frontend/index.html frontend/input.css ./
 COPY frontend/public ./public
 COPY frontend/img ./img
-COPY frontend/rust-toolchain.toml ./rust-toolchain.toml
 COPY frontend/src ./src
 ENV RUSTFLAGS='--cfg getrandom_backend="wasm_js"'
+RUN trunk build --release --locked
 
-# TODO: For some reason, --release breaks things
-RUN trunk build --release
-
-FROM caddy:2.8
-COPY --from=chef /app/dist /srv
-COPY .docker/Caddyfile /etc/caddy/Caddyfile
-EXPOSE 80
+FROM caddy:2.10.2-alpine AS runtime
+ARG CADDYFILE=.docker/Caddyfile
+# Kubernetes listens on 8080 and drops all capabilities. The upstream file
+# capability would otherwise make exec fail with EPERM under that bounding set.
+RUN setcap -r /usr/bin/caddy
+COPY --from=builder /app/dist /srv
+COPY ${CADDYFILE} /etc/caddy/Caddyfile
+EXPOSE 80 8080

@@ -1,0 +1,35 @@
+# A regular Sync Job, not PreSync: the database must exist on first install.
+# update-release.py changes the name for every release. No TTL: Argo CD should
+# not repeatedly recreate completed Jobs. Old Jobs can be removed manually.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: migrate-unreleased
+  annotations:
+    argocd.argoproj.io/sync-wave: '10'
+spec:
+  backoffLimit: 1
+  activeDeadlineSeconds: 600
+  template:
+    spec:
+      restartPolicy: Never
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        seccompProfile: { type: RuntimeDefault }
+      containers:
+        - name: migration
+          image: foodie-migration:unreleased
+          args: [up]
+          env:
+            - name: DATABASE_URL
+              valueFrom: { secretKeyRef: { name: foodie, key: DATABASE_URL } }
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: { drop: [ALL] }
+          resources:
+            requests: { cpu: 100m, memory: 64Mi }
+            limits: { memory: 256Mi }

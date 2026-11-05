@@ -1,0 +1,9 @@
+.git
+.db
+.aws
+**/target
+**/dist
+**/.env
+**/.env.*
+redis.conf
+.db-url

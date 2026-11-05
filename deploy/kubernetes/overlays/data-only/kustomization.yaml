@@ -1,0 +1,6 @@
+# First-sync target for restoring data. No migrations or public traffic.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: foodie
+resources:
+  - ../../base/data

@@ -1,0 +1,77 @@
+name: CI
+on:
+  push:
+    branches: [master]
+    paths-ignore: ['deploy/**', 'docs/**', '**/*.md']
+  pull_request:
+    branches: [master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:14.1-alpine
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_USER: postgres
+          POSTGRES_DB: postgres
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd pg_isready --health-interval 10s
+          --health-timeout 5s --health-retries 5
+    env:
+      DATABASE_URL: postgres://postgres:postgres@localhost:5432/postgres
+      GOOGLE_CLIENT_ID: foo
+      GOOGLE_CLIENT_SECRET: foo
+      FRONTEND_URL: https://example.com
+      BASE_URL: https://example.com
+      AWS_URL: https://example.com
+      AWS_USER: foo
+      AWS_PASSWORD: foo
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@1.94.0
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: backend
+      - run: cargo test --locked
+        working-directory: backend
+      - run: cargo build --locked --release
+        working-directory: backend/migration
+
+  frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: frontend/.docker/Dockerfile.prod
+          build-args: CADDYFILE=frontend/.docker/Caddyfile.kubernetes
+          push: false
+          cache-from: type=gha,scope=frontend
+          cache-to: type=gha,mode=max,scope=frontend
+
+  manifests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: azure/setup-kubectl@v4
+        with:
+          version: v1.36.5
+      - run: |
+          kubectl kustomize deploy/kubernetes/overlays/data-only > /tmp/data.yaml
+          kubectl kustomize deploy/kubernetes/overlays/production > /tmp/production.yaml
+      - run: python3 -m pip install PyYAML==6.0.3
+      - run: python3 scripts/validate-manifests.py /tmp/data.yaml /tmp/production.yaml
+      - name: Validate Kubernetes schemas
+        run: |
+          docker run --rm -v /tmp:/manifests:ro \
+            ghcr.io/yannh/kubeconform:v0.7.0@sha256:85dbef6b4b312b99133decc9c6fc9495e9fc5f92293d4ff3b7e1b30f5611823c \
+            -strict -summary -ignore-missing-schemas /manifests/data.yaml /manifests/production.yaml

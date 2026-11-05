@@ -1,0 +1,100 @@
+# Dedicated directories, never the Compose data directories. Provision them
+# manually before the first sync; local volumes do not create missing paths.
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: foodie-postgres
+  annotations:
+    argocd.argoproj.io/sync-wave: '-20'
+    argocd.argoproj.io/sync-options: Prune=false,Delete=false
+spec:
+  capacity: { storage: 20Gi }
+  accessModes: [ReadWriteOnce]
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: ''
+  claimRef: { namespace: foodie, name: postgres }
+  local: { path: /var/lib/foodie/postgres }
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+        - matchExpressions:
+            - { key: kubernetes.io/hostname, operator: In, values: [sebastian] }
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: postgres
+  annotations:
+    argocd.argoproj.io/sync-wave: '-20'
+    argocd.argoproj.io/sync-options: Prune=false,Delete=false
+spec:
+  accessModes: [ReadWriteOnce]
+  storageClassName: ''
+  volumeName: foodie-postgres
+  resources: { requests: { storage: 20Gi } }
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: foodie-minio
+  annotations:
+    argocd.argoproj.io/sync-wave: '-20'
+    argocd.argoproj.io/sync-options: Prune=false,Delete=false
+spec:
+  capacity: { storage: 50Gi }
+  accessModes: [ReadWriteOnce]
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: ''
+  claimRef: { namespace: foodie, name: minio }
+  local: { path: /var/lib/foodie/minio }
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+        - matchExpressions:
+            - { key: kubernetes.io/hostname, operator: In, values: [sebastian] }
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: minio
+  annotations:
+    argocd.argoproj.io/sync-wave: '-20'
+    argocd.argoproj.io/sync-options: Prune=false,Delete=false
+spec:
+  accessModes: [ReadWriteOnce]
+  storageClassName: ''
+  volumeName: foodie-minio
+  resources: { requests: { storage: 50Gi } }
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: foodie-redis
+  annotations:
+    argocd.argoproj.io/sync-wave: '-20'
+    argocd.argoproj.io/sync-options: Prune=false,Delete=false
+spec:
+  capacity: { storage: 2Gi }
+  accessModes: [ReadWriteOnce]
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: ''
+  claimRef: { namespace: foodie, name: redis }
+  local: { path: /var/lib/foodie/redis }
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+        - matchExpressions:
+            - { key: kubernetes.io/hostname, operator: In, values: [sebastian] }
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: redis
+  annotations:
+    argocd.argoproj.io/sync-wave: '-20'
+    argocd.argoproj.io/sync-options: Prune=false,Delete=false
+spec:
+  accessModes: [ReadWriteOnce]
+  storageClassName: ''
+  volumeName: foodie-redis
+  resources: { requests: { storage: 2Gi } }

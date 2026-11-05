@@ -6,3 +6,12 @@ Want to make a website for easy picking of dinner
 - Categories for food: Junk, Healthy etc...
 
 Will probably never finish it, but fun to play around with Leptos and Rust in general
+
+## Deployment
+
+Production targets the existing k3s/Argo CD cluster at
+`https://foodie.lyngwinther.com`. See [deployment and releases](docs/deployment.md)
+and the [Compose-to-Kubernetes migration runbook](docs/migration.md).
+
+Kubernetes configuration is in `deploy/kubernetes`. The former `./deploy`
+Compose script is now `scripts/deploy-compose` and must be run from the repo root.

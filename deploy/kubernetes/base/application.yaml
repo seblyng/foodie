@@ -1,0 +1,113 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend
+spec:
+  selector: { app: backend }
+  ports:
+    - { name: http, port: 42069, targetPort: http }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend
+  annotations:
+    argocd.argoproj.io/sync-wave: '20'
+spec:
+  # WebSocket fanout is process-local; do not scale without shared messaging.
+  replicas: 1
+  strategy: { type: Recreate }
+  revisionHistoryLimit: 3
+  selector:
+    matchLabels: { app: backend }
+  template:
+    metadata:
+      labels: { app: backend }
+    spec:
+      automountServiceAccountToken: false
+      terminationGracePeriodSeconds: 30
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        seccompProfile: { type: RuntimeDefault }
+      containers:
+        - name: backend
+          image: foodie-backend:unreleased
+          envFrom:
+            - configMapRef: { name: foodie-config }
+            - secretRef: { name: foodie }
+          ports:
+            - { name: http, containerPort: 42069 }
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: { drop: [ALL] }
+          resources:
+            requests: { cpu: 100m, memory: 128Mi }
+            limits: { memory: 512Mi }
+          startupProbe:
+            httpGet: { path: /api/health-check, port: http }
+            periodSeconds: 5
+            failureThreshold: 60
+          readinessProbe:
+            httpGet: { path: /api/health-check, port: http }
+          livenessProbe:
+            httpGet: { path: /api/health-check, port: http }
+            periodSeconds: 20
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend
+spec:
+  selector: { app: frontend }
+  ports:
+    - { name: http, port: 8080, targetPort: http }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend
+  annotations:
+    argocd.argoproj.io/sync-wave: '20'
+spec:
+  replicas: 1
+  revisionHistoryLimit: 3
+  selector:
+    matchLabels: { app: frontend }
+  template:
+    metadata:
+      labels: { app: frontend }
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        seccompProfile: { type: RuntimeDefault }
+      containers:
+        - name: frontend
+          image: foodie-frontend:unreleased
+          env:
+            - { name: XDG_CONFIG_HOME, value: /tmp/config }
+            - { name: XDG_DATA_HOME, value: /tmp/data }
+          ports:
+            - { name: http, containerPort: 8080 }
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: { drop: [ALL] }
+          resources:
+            requests: { cpu: 25m, memory: 32Mi }
+            limits: { memory: 128Mi }
+          readinessProbe:
+            httpGet: { path: /, port: http }
+          livenessProbe:
+            httpGet: { path: /, port: http }
+            periodSeconds: 20
+          volumeMounts:
+            - { name: tmp, mountPath: /tmp }
+      volumes:
+        - name: tmp
+          emptyDir: { sizeLimit: 32Mi }

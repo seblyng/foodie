@@ -1,0 +1,31 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: foodie
+resources:
+  - ../../base
+  - ingress.yaml
+configMapGenerator:
+  - name: foodie-config
+    literals:
+      - BASE_URL=https://foodie.lyngwinther.com
+      - FRONTEND_URL=https://foodie.lyngwinther.com
+      - AWS_URL=https://foodie.lyngwinther.com
+# Populated by the first release PR. Never sync production with these tags.
+images:
+  - name: foodie-backend
+    newName: ghcr.io/seblyng/foodie-backend
+    newTag: unreleased
+  - name: foodie-frontend
+    newName: ghcr.io/seblyng/foodie-frontend
+    newTag: unreleased
+  - name: foodie-migration
+    newName: ghcr.io/seblyng/foodie-migration
+    newTag: unreleased
+patches:
+  - target:
+      kind: Job
+      name: migrate-unreleased
+    patch: |-
+      - op: replace
+        path: /metadata/name
+        value: migrate-unreleased

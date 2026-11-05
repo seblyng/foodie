@@ -1,13 +1,17 @@
-FROM rust:bookworm AS builder
+FROM rust:1.94.0-bookworm AS builder
+ARG CARGO_BUILD_JOBS=2
+ENV CARGO_BUILD_JOBS=${CARGO_BUILD_JOBS}
 
 WORKDIR /app
 
 COPY backend/migration ./
 
-RUN cargo build --release
+RUN cargo build --release --locked
 
 FROM debian:bookworm-slim AS runtime
 WORKDIR /app
-RUN apt-get update && apt install -y openssl ca-certificates
+RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates libssl3 \
+    && rm -rf /var/lib/apt/lists/*
 COPY --from=builder /app/target/release/migration /usr/local/bin
+USER 10001:10001
 ENTRYPOINT ["/usr/local/bin/migration"]
