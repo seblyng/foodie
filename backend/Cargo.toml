@@ -2,6 +2,7 @@
 name = "backend"
 version = "0.1.0"
 edition = "2021"
+rust-version = "1.94.1"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [lib]
@@ -13,37 +14,37 @@ name = "backend"
 
 [dependencies]
 common = { path = "../common", features = ["backend"] }
-serde = { version = "1.0.219", features = ["serde_derive", "derive"] }
-serde_json = "1.0.91"
-anyhow = "1.0.68"
+serde = { version = "1.0.229", features = ["serde_derive", "derive"] }
+serde_json = "1.0.154"
+anyhow = "1.0.104"
 axum-login = { version = "0.17.0" }
-rust_decimal = "1.31.0"
-chrono = { version = "0.4.26", features = ["serde"] }
-tokio = { version = "1.24.1", features = ["full"] }
-env_logger = "0.11.0"
-log = "0.4.17"
-futures-util = "0.3.31"
-axum = { version = "0.8.1", features = ["ws"] }
-argon2 = "0.5.2"
-rand = { version = "0.8.5", features = ["min_const_gen"] }
-aws-sdk-s3 = "1.15.0"
-aws-config = "1.1.1"
-tower-http = { version = "0.6.2", features = ["cors", "catch-panic"] }
-dotenv = "0.15.0"
+rust_decimal = "1.43.0"
+chrono = { version = "0.4.45", features = ["serde"] }
+tokio = { version = "1.54.1", features = ["full"] }
+env_logger = "0.11.11"
+log = "0.4.35"
+futures-util = "0.3.34"
+axum = { version = "0.8.9", features = ["ws"] }
+argon2 = "0.5.3"
+rand = { version = "0.8.8", features = ["min_const_gen"] }
+aws-sdk-s3 = { version = "1.157.0", default-features = false, features = ["default-https-client", "http-1x", "rt-tokio"] }
+aws-config = { version = "1.13.0", default-features = false, features = ["default-https-client", "rt-tokio"] }
+tower-http = { version = "0.6.11", features = ["cors", "catch-panic"] }
+dotenv = { package = "dotenvy", version = "0.15.7" }
 oauth2 = "5.0.0"
-reqwest = { version = "0.12.5", features = ["json", "cookies"] }
-hyper = "1.0.1"
+reqwest = { version = "0.12.28", features = ["json", "cookies"] }
+hyper = "1.12.0"
 itertools = "0.14.0"
-sea-orm = { version = "1.1.12", features = ["sqlx-postgres", "runtime-tokio-native-tls", "macros"] }
-async-trait = "0.1.74"
-tower = "0.5.0"
-uuid = { version = "1.7.0", features = ["v4"] }
+sea-orm = { version = "1.1.20", features = ["sqlx-postgres", "runtime-tokio-native-tls", "macros"] }
+async-trait = "0.1.92"
+tower = "0.5.3"
+uuid = { version = "1.29.0", features = ["v4"] }
 tower-sessions-core = "0.14.0"
 fred = "10.1.0"
-time = "0.3.41"
-redis = { version = "0.32.2", features = ["tokio-comp", "aio", "connection-manager"] }
+time = "0.3.55"
+redis = { version = "0.32.7", features = ["tokio-comp", "aio", "connection-manager"] }
 
 [dev-dependencies]
-sqlx = "0.8.3"
-sea-orm-migration = "1.1.12"
+sqlx = { version = "0.8.6", default-features = false, features = ["postgres", "macros", "migrate", "runtime-tokio-native-tls"] }
+sea-orm-migration = "1.1.20"
 migration = { path = "migration" }

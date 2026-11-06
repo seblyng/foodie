@@ -1,7 +1,11 @@
 use std::time::Duration;
 
 use aws_config::BehaviorVersion;
-use aws_sdk_s3::{config::Credentials, presigning::PresigningConfig, Client as S3Client};
+use aws_sdk_s3::{
+    config::{Credentials, RequestChecksumCalculation},
+    presigning::PresigningConfig,
+    Client as S3Client,
+};
 use hyper::Method;
 
 use super::FoodieStorage;
@@ -29,10 +33,35 @@ impl FoodieAws {
             ))
             .region("us-east-1");
         let conf = aws.load().await;
-        let config_builder = aws_sdk_s3::config::Builder::from(&conf).force_path_style(true);
+        // The browser supplies the upload body after this URL is signed. Do not
+        // sign the SDK's default checksum for an empty body into that URL.
+        let config_builder = aws_sdk_s3::config::Builder::from(&conf)
+            .force_path_style(true)
+            .request_checksum_calculation(RequestChecksumCalculation::WhenRequired);
         let client = S3Client::from_conf(config_builder.build());
 
         Self { client }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[tokio::test]
+    async fn presigned_upload_does_not_require_a_checksum_for_an_empty_body() {
+        let storage = FoodieAws::new().await;
+        let file = Uuid::new_v4();
+        let url = storage.get_presigned_url(file, Method::PUT).await.unwrap();
+        let url = reqwest::Url::parse(&url).unwrap();
+
+        assert_eq!(url.path(), format!("/aws/{file}"));
+        assert!(url.query_pairs().any(|(key, value)| {
+            key.eq_ignore_ascii_case("x-amz-signedheaders") && value == "host"
+        }));
+        assert!(!url.query_pairs().any(|(key, _)| {
+            key.starts_with("x-amz-checksum-") || key == "x-amz-sdk-checksum-algorithm"
+        }));
     }
 }
 

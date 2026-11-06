@@ -42,7 +42,7 @@ jobs:
       AWS_PASSWORD: foo
     steps:
       - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@1.94.0
+      - uses: dtolnay/rust-toolchain@1.94.1
       - uses: Swatinem/rust-cache@v2
         with:
           workspaces: backend

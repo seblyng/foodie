@@ -50,7 +50,7 @@ and validate the rendered manifests before the first rollout.
 ## Images and releases
 
 CI tests the backend against disposable PostgreSQL and builds the actual release
-WASM frontend image. Backend/migration use Rust 1.94.0, the frontend app uses its
+WASM frontend image. Backend/migration use Rust 1.94.1, the frontend app uses its
 existing `nightly-2025-08-01`, and Trunk is pinned. Cargo uses committed lockfiles.
 Container build context excludes data, environment files, `.aws`, Git and targets.
 
