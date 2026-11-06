@@ -77,8 +77,6 @@ jobs:
       - run: |
           kubectl kustomize deploy/kubernetes/overlays/data-only > /tmp/data.yaml
           kubectl kustomize deploy/kubernetes/overlays/production > /tmp/production.yaml
-      - run: python3 -m pip install PyYAML==6.0.3
-      - run: python3 scripts/validate-manifests.py /tmp/data.yaml /tmp/production.yaml
       - name: Validate Kubernetes schemas
         run: |
           docker run --rm -v /tmp:/manifests:ro \

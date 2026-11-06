@@ -1,13 +1,13 @@
-# A regular Sync Job, not PreSync: the database must exist on first install.
-# update-release.py changes the name for every release. No TTL: Argo CD should
-# not repeatedly recreate completed Jobs. Old Jobs can be removed manually.
+# A Sync hook, not PreSync: the database and secrets must exist on first install.
+# Recreated for each sync; `migration up` only applies pending migrations.
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: migrate-unreleased
+  name: migrate
   annotations:
     argocd.argoproj.io/sync-wave: '10'
-    argocd.argoproj.io/compare-options: IgnoreExtraneous
+    argocd.argoproj.io/hook: Sync
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
 spec:
   backoffLimit: 1
   activeDeadlineSeconds: 600

@@ -10,7 +10,7 @@ configMapGenerator:
       - BASE_URL=https://foodie.lyngwinther.com
       - FRONTEND_URL=https://foodie.lyngwinther.com
       - AWS_URL=https://foodie.lyngwinther.com
-# Populated by the first release PR. Never sync production with these tags.
+# The release workflow updates all three immutable image digests together.
 images:
   - name: foodie-backend
     newName: ghcr.io/seblyng/foodie-backend
@@ -21,11 +21,3 @@ images:
   - name: foodie-migration
     newName: ghcr.io/seblyng/foodie-migration
     digest: sha256:883e04c5806b49bc92ff5cffa357367546a58375674b0d6ec1640cba20a22347
-patches:
-  - target:
-      kind: Job
-      name: migrate-unreleased
-    patch: |-
-      - op: replace
-        path: /metadata/name
-        value: migrate-58384a775a6b

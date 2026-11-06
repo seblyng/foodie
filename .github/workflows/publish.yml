@@ -55,6 +55,7 @@ jobs:
           build-args: CADDYFILE=frontend/.docker/Caddyfile.kubernetes
           push: true
           tags: ${{ steps.config.outputs.image }}:sha-${{ github.event.workflow_run.head_sha }}
+          labels: org.opencontainers.image.revision=${{ github.event.workflow_run.head_sha }}
           cache-from: type=gha,scope=${{ matrix.component }}
           cache-to: type=gha,mode=max,scope=${{ matrix.component }}
       - name: Record immutable image reference
@@ -91,18 +92,19 @@ jobs:
           pattern: image-*
           merge-multiple: true
           path: /tmp/release
-      - run: python3 -m pip install PyYAML==6.0.3 ruamel.yaml==0.18.16
-      - name: Update production release
-        env:
-          RELEASE: ${{ github.event.workflow_run.head_sha }}
-        run: python3 scripts/update-release.py "$RELEASE" /tmp/release
-      - uses: azure/setup-kubectl@v4
+      - uses: imranismail/setup-kustomize@v2
         with:
-          version: v1.36.5
+          kustomize-version: '5.8.3'
+      - name: Update production image digests
+        working-directory: deploy/kubernetes/overlays/production
+        run: |
+          kustomize edit set image \
+            "foodie-backend=$(</tmp/release/backend.txt)" \
+            "foodie-frontend=$(</tmp/release/frontend.txt)" \
+            "foodie-migration=$(</tmp/release/migration.txt)"
       - name: Validate release manifests
         run: |
-          kubectl kustomize deploy/kubernetes/overlays/production > /tmp/production.yaml
-          python3 scripts/validate-manifests.py --require-release /tmp/production.yaml
+          kustomize build deploy/kubernetes/overlays/production > /tmp/production.yaml
           docker run --rm -v /tmp:/manifests:ro \
             ghcr.io/yannh/kubeconform:v0.7.0@sha256:85dbef6b4b312b99133decc9c6fc9495e9fc5f92293d4ff3b7e1b30f5611823c \
             -strict -summary -ignore-missing-schemas /manifests/production.yaml
@@ -112,7 +114,7 @@ jobs:
           title: 'deploy: release ${{ github.event.workflow_run.head_sha }}'
           commit-message: 'deploy: update production image digests'
           body: |
-            Publishes the images built from ${{ github.event.workflow_run.head_sha }}.
-            Review database migrations before merging. Argo CD deploys after merge once automatic sync is enabled.
-            The release job validated the rendered manifests. GitHub does not trigger additional CI for PRs created using GITHUB_TOKEN.
+            Publishes the three images built from ${{ github.event.workflow_run.head_sha }}.
+            Review database migrations before merging. Argo CD deploys after merge.
+            The release workflow validated the rendered manifests; PRs created with GITHUB_TOKEN do not trigger additional CI.
           add-paths: deploy/kubernetes/overlays/production/kustomization.yaml

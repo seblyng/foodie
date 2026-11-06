@@ -45,7 +45,7 @@ Production image references are pinned by digest.
 For a fresh recovery, follow [migration.md](migration.md): first disable
 application automatic sync and change its source to `overlays/data-only`, then
 restore and verify data before switching back to production. Render production
-and run the manifest checker with `--require-release` before the first rollout.
+and validate the rendered manifests before the first rollout.
 
 ## Images and releases
 
@@ -70,12 +70,21 @@ ghcr.io/seblyng/foodie-frontend
 ghcr.io/seblyng/foodie-migration
 ```
 
-The release job opens/updates `release/production`, setting immutable digests and
-a migration Job name `migrate-<12-character-source-sha>`. It rejects builds whose
-application/build sources have since changed on master. CI ignores deploy/docs-only
-pushes, so merging the release PR does not start another image publication.
-The release job itself validates rendered manifests: GitHub suppresses new CI
-events for PRs created with `GITHUB_TOKEN`.
+After all three builds succeed, the workflow uses `kustomize edit set image` to
+update their immutable digests together. `peter-evans/create-pull-request` opens or
+updates the `release/production` PR immediately after validation.
+Images also have `sha-<source-commit>` tags and an OCI revision label
+for troubleshooting. The release job rejects builds whose application/build
+sources have since changed on master.
+
+The release workflow renders the updated production manifests and validates them
+with kubeconform before opening the PR. This validation runs in the publishing
+workflow because GitHub suppresses additional CI for PRs created with
+`GITHUB_TOKEN`. Review migrations before merging. Argo CD syncs the merged
+manifests and runs the migration hook before rolling out the application.
+
+CI ignores deploy/docs-only pushes, so merging a release PR does not start another
+image publication. There are no Python release or validation scripts.
 
 Repository setup, when you are ready to publish:
 
@@ -101,18 +110,23 @@ Sync ordering within the Foodie Application:
 | -20 | Retained PVs/PVCs |
 | -10 | SecretStore and ExternalSecret |
 | 0 | PostgreSQL, Redis, MinIO, services, generated ConfigMap |
-| 10 | Release-specific migration Job (`migration up`) |
+| 10 | Migration Sync hook (`migration up`) |
 | 20 | Backend and frontend |
 | 30 | Public ingress |
 
 Migrations must be backward compatible: the previous backend can continue to
 serve while migrations run. Use expand/contract changes for destructive schema
 changes. A failed Job blocks the new backend rollout. Investigate its logs before
-deleting the failed Job and resyncing. No Job TTL is set, so completed Jobs are not
-continuously recreated by Argo CD. Pruning is off; remove old Jobs and generated
-ConfigMaps manually once no running or rollback workload references them.
-Historical migration Jobs use `IgnoreExtraneous` so retaining completed rollback
-Jobs does not leave the Application permanently OutOfSync.
+resyncing. The named `migrate` hook uses `BeforeHookCreation`: Argo CD replaces it
+on the next full sync and retains its most recent result/logs until then.
+`migration up` is idempotent and applies only pending migrations, so unrelated
+syncs and rollbacks may run it too. Use a full application sync; selective resource
+syncs do not execute hooks. This is a Sync hook rather than PreSync so the database
+and secrets are ready on a fresh install before migrations run.
+
+Pruning is off. Existing release-specific migration Jobs remain as historical
+records with `IgnoreExtraneous`; remove them and old generated ConfigMaps manually
+when no longer needed. New releases keep only the latest named migration hook.
 
 ## Secrets
 
@@ -151,23 +165,24 @@ rotate that role in PostgreSQL as well and update DATABASE_URL together.
 
 ## Local validation
 
-Requires Docker, kubectl and Python with PyYAML (CI uses 6.0.3).
-The release updater also uses ruamel.yaml 0.18.16 to preserve YAML comments,
-indentation and block scalars, keeping release PRs limited to version changes.
+Requires Docker and kubectl. The publishing workflow also uses Kustomize 5.8.3 to
+edit image references with its standard CLI.
 
 ```sh
 kubectl kustomize deploy/kubernetes/overlays/data-only > /tmp/foodie-data.yaml
 kubectl kustomize deploy/kubernetes/overlays/production > /tmp/foodie-production.yaml
-python3 scripts/validate-manifests.py /tmp/foodie-data.yaml /tmp/foodie-production.yaml
+docker run --rm -v /tmp:/manifests:ro \
+  ghcr.io/yannh/kubeconform:v0.7.0@sha256:85dbef6b4b312b99133decc9c6fc9495e9fc5f92293d4ff3b7e1b30f5611823c \
+  -strict -summary -ignore-missing-schemas /manifests/foodie-data.yaml /manifests/foodie-production.yaml
 docker build -f backend/.docker/Dockerfile.prod -t foodie-backend:local .
 docker build -f backend/.docker/Dockerfile.migrations.prod -t foodie-migration:local .
 docker build -f frontend/.docker/Dockerfile.prod \
   --build-arg CADDYFILE=frontend/.docker/Caddyfile.kubernetes -t foodie-frontend:local .
 ```
 
-The manifest checker verifies local safety/ordering invariants; it is not a
-substitute for Kubernetes schema validation or the first runtime verification.
-CI also runs a pinned kubeconform image for standard Kubernetes schemas. Custom
+CI runs a pinned kubeconform image for standard Kubernetes schemas. The former
+Python assertions about exact routes, storage names and annotations have been
+removed; review changes to those deployment settings in PRs. Custom
 resources require the installed ESO/Argo CD/cert-manager schemas during rollout;
 missing custom schemas are skipped by that offline CI check.
 
@@ -205,8 +220,8 @@ as a logical backup replacement. Schedule off-host backups with the backup
 destination/credentials you choose before considering migration complete.
 
 For an application rollback, revert the release manifest commit and sync Argo
-CD. The old migration Job should already exist, so it will not rerun. Do not
-remove a current or rollback migration Job casually. A rollback does not undo
+CD. The migration hook runs again, applying only pending migrations; it never
+runs down migrations. A rollback does not undo
 schema changes or data writes: incompatible database changes require an explicit
 restore and a decision about writes made after the backup.
 
