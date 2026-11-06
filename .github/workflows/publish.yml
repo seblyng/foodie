@@ -113,8 +113,5 @@ jobs:
           branch: release/production
           title: 'deploy: release ${{ github.event.workflow_run.head_sha }}'
           commit-message: 'deploy: update production image digests'
-          body: |
-            Publishes the three images built from ${{ github.event.workflow_run.head_sha }}.
-            Review database migrations before merging. Argo CD deploys after merge.
-            The release workflow validated the rendered manifests; PRs created with GITHUB_TOKEN do not trigger additional CI.
+          body: 'Deploys images built from ${{ github.event.workflow_run.head_sha }}'
           add-paths: deploy/kubernetes/overlays/production/kustomization.yaml
