@@ -2,22 +2,22 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 namespace: foodie
 resources:
-  - ../../base
-  - ingress.yaml
+- ../../base
+- ingress.yaml
 configMapGenerator:
-  - name: foodie-config
-    literals:
-      - BASE_URL=https://foodie.lyngwinther.com
-      - FRONTEND_URL=https://foodie.lyngwinther.com
-      - AWS_URL=https://foodie.lyngwinther.com
+- literals:
+  - BASE_URL=https://foodie.lyngwinther.com
+  - FRONTEND_URL=https://foodie.lyngwinther.com
+  - AWS_URL=https://foodie.lyngwinther.com
+  name: foodie-config
 # The release workflow updates all three immutable image digests together.
 images:
-  - name: foodie-backend
-    newName: ghcr.io/seblyng/foodie-backend
-    digest: sha256:c7f54eb42fadb2e4fdb0089c03d88b56ab27f93d4e6f13c59e431b8c52cae1da
-  - name: foodie-frontend
-    newName: ghcr.io/seblyng/foodie-frontend
-    digest: sha256:f553e2f4b1dcab7426f0e33ea347a0805298df1c3a4335d772015edf1b7d90ef
-  - name: foodie-migration
-    newName: ghcr.io/seblyng/foodie-migration
-    digest: sha256:883e04c5806b49bc92ff5cffa357367546a58375674b0d6ec1640cba20a22347
+- digest: sha256:16a7976d68a4896145f63742d4170ec9319cfddfe2be281f141594133e941b38
+  name: foodie-backend
+  newName: ghcr.io/seblyng/foodie-backend
+- digest: sha256:fb574348cd14a2d5e764191a93b924d6ff7889073c30f6253bd183fe5d2c3293
+  name: foodie-frontend
+  newName: ghcr.io/seblyng/foodie-frontend
+- digest: sha256:092d2c804daf529632387bf98248ec7221a16ce0845b48f29704b9301c0fc730
+  name: foodie-migration
+  newName: ghcr.io/seblyng/foodie-migration
